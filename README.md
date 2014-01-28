@@ -17,6 +17,9 @@ To create a minimal query protocol for OSC that allows a client to browse and in
 The intent of this goal is to provide baseline functionality that other developers may take advantage of to construct impromptu or improvisational interfaces for dynamic environments.
 
 ###PROPOSAL
+ * An **OSC Query** is an OSC message with zero values whose OSC address path is the address of the node being queried appended by a number sign and question mark ("#?") and the name of the query.  Examples:
+  * "/foo/bar#?INFO"  this address will dispatch the "INFO" query to the OSC destination "/foo/bar"
+  * "/foo/bar#?CONTENTS"  dispatch the "CONTENTS" query to the OSC destination "/foo/bar"
  * All OSC destinations (both methods and containers) respond to a series of queries.  These queries allow the address space to be explored and describe how to interact with the OSC methods.  The possible defined queries are:
   * **INFO**    Returns an OSC message with a single OSC string containing a human-readable description of this container/method
   * **CONTENTS**    Returns an OSC message with two arrays.  The first array contains OSC strings with the names of the OSC containers (branches) inside this node, the second array contains OSC strings with the names of the OSC methods (leaves) inside this node.
@@ -27,12 +30,9 @@ The intent of this goal is to provide baseline functionality that other develope
     * The first item in each array is the minimum value of the range (or the OSC value "nil" if there's no minimum or the value isn't ranged)
     * The second item in the array is the maximum value of the range (or the OSC value "nil" if there's no max range or the value isn't ranged).
     * If the value has a minimum or maximum range, the third value in the array should be "nil" (likely the most common occurrence).  If the value doesn't have a range- if the value is expressed as an item chosen from a list of possible values- the third value in the array should be another array containing the list of available choices.
- * An **OSC Query** is an OSC message with zero values whose OSC address path is the address of the node being queried appended by a number sign ("#") and the name of the query.  Examples:
-  * "/foo/bar#INFO"  this address will dispatch the "INFO" query to the OSC destination "/foo/bar"
-  * "/foo/bar#CONTENTS"  dispatch the "CONTENTS" query to the OSC destination "/foo/bar"
- * If the query type is unrecognized (for example, "/foo/bar#GABBAGABBAHEY"), the server should return an error of type 400 (bad request/syntax error) so the client knows that this query isn't supported.  This allows specific applications to develop more specialized query systems without causing significant conflicts with other software that supports this basic query protocol.
+ * If the query type is unrecognized (for example, "/foo/bar#?GABBAGABBAHEY"), the server should return an error of type 400 (bad request/syntax error) so the client knows that this query isn't supported.  This allows specific applications to develop more specialized query systems without causing significant conflicts with other software that supports this basic query protocol.
  * The response to an OSC query is either a **REPLY** (if the query was successful) or an **ERROR** (if something went wrong).
-  * **REPLIES**    If the response is a reply, the query executed successfully and the server needs to send some data back to the client which issued the query.  This response is an OSC message, and the address of this message contains the address of the query as well as the query itself, separated by two number signs ("##").  The values in this message depend on the reply, and it's assumed that the client will be able to locate the original query from the reply's address (which contains the address and type of the original query).
+  * **REPLIES**    If the response is a reply, the query executed successfully and the server needs to send some data back to the client which issued the query.  This response is an OSC message, and the address of this message contains the address of the query as well as the query itself, separated by a number sign and a less-than sign("#<").  The values in this message depend on the reply, and it's assumed that the client will be able to locate the original query from the reply's address (which contains the address and type of the original query).
   * **ERRORS**    If the response is an error, there was a problem with the query and the client needs to be notified.  Like replies, errors are just OSC messages, and the address of the message contains the address of the query as well as the query itself- unlike replies, these are separated by a number sign and an exclamation point ("#!").  Also unlike replies, error messages will always have exactly one value, and that value will either be an integer or a string: if it's an integer the value describes one of the defined error values listed below, if it's a string the error is user-defined somehow and the string describes it in greater detail.  the defined errors are:
     * **204**  (no content- server received request, but the request is inappropriate in some way- querying VAL or RANGE when ACCESS returned 0, for example)
     * **400**  (bad request/syntax error- corrupt message/packet, unrecognized query, etc)
@@ -46,98 +46,98 @@ In the below examples, messages from client -> server (queries) are denoted with
 Direction | Message Address | Message Type Tag String | : | Message values: space-delineated, strings in quotes
 --- | --- | --- | --- | ---
 -> | /foo/bar | ifs | : | 1 2.0 "three"
--> | /foo/bar2#VAL |   |   |   
-<- | /foo/bar2##VAL | i | : | 1
--> | /foo/bar3#VAL |   |   |   
+-> | /foo/bar2#?VAL |   |   |   
+<- | /foo/bar2#<VAL | i | : | 1
+-> | /foo/bar3#?VAL |   |   |   
 <- | /foo/bar3#!VAL | i | : | 404
 
  Exploring the OSC address space (the reply indicates one container and several methods)  
 ~~~
-->  /foo/bar#CONTENTS
-<-  /foo/bar##CONTENTS [s][ssss]:"containerNameA" "methodName1" "methodName2" "methodName3" "methodName4";
+->  /foo/bar#?CONTENTS
+<-  /foo/bar#<CONTENTS [s][ssss]:"containerNameA" "methodName1" "methodName2" "methodName3" "methodName4";
 ~~~
  OSC method with inaccessible values
 ~~~
-->  /foo/bar/methodName#ACCESS
-<-  /foo/bar/methodName##ACCESS  i : 0
+->  /foo/bar/methodName#?ACCESS
+<-  /foo/bar/methodName#<ACCESS  i : 0
 ~~~
  OSC method that is write-only
 ~~~
-->  /foo/bar/methodName#ACCESS
-<-  /foo/bar/methodName##ACCESS  i : 2
-->  /foo/bar/methodName#VAL
+->  /foo/bar/methodName#?ACCESS
+<-  /foo/bar/methodName#<ACCESS  i : 2
+->  /foo/bar/methodName#?VAL
 <-  /foo/bar/methodName#!VAL  i : 204
 ~~~
  OSC method that is read-only
 ~~~
-->  /foo/bar/methodName#ACCESS
-<-  /foo/bar/methodName##ACCESS  i : 1
+->  /foo/bar/methodName#?ACCESS
+<-  /foo/bar/methodName#<ACCESS  i : 1
 ->  /foo/bar/methodName  f : 0.5
 <-  <the server might not respond at all>, or /foo/bar/methodName#!  i : 204
 ~~~
  OSC methods with fully read/writable values
 ~~~
-->  /foo/bar/methodName#ACCESS
-<-  /foo/bar/methodName##ACCESS  i : 3
+->  /foo/bar/methodName#?ACCESS
+<-  /foo/bar/methodName#<ACCESS  i : 3
 ~~~
  OSC Method that returns/expects a single float value, ranged 0.0-1.0
 ~~~
-->  /foo/bar/methodName#TYPE
-<-  /foo/bar/methodName##TYPE  s : "f"
-->  /foo/bar/methodName#RANGE
-<-  /foo/bar/methodName##RANGE  [ffN] : 0.0 1.0
-->  /foo/bar/methodName#VAL
-<-  /foo/bar/methodName##VAL  f : 1.0
+->  /foo/bar/methodName#?TYPE
+<-  /foo/bar/methodName#<TYPE  s : "f"
+->  /foo/bar/methodName#?RANGE
+<-  /foo/bar/methodName#<RANGE  [ffN] : 0.0 1.0
+->  /foo/bar/methodName#?VAL
+<-  /foo/bar/methodName#<VAL  f : 1.0
 ->  /foo/bar/methodName  f : 0.5
 ~~~
  OSC Method that returns/expects two float values (not an array, just two float values in the OSC message), ranged 0.0-1.0
 ~~~
-->  /foo/bar/methodName#TYPE
-<-  /foo/bar/methodName##TYPE  s : "ff"
-->  /foo/bar/methodName#RANGE
-<-  /foo/bar/methodName##RANGE  [ffN][ffN] : 0.0 1.0 0.0 1.0
-->  /foo/bar/methodName#VAL
-<-  /foo/bar/methodName##VAL  ff : 1.0 1.0
+->  /foo/bar/methodName#?TYPE
+<-  /foo/bar/methodName#<TYPE  s : "ff"
+->  /foo/bar/methodName#?RANGE
+<-  /foo/bar/methodName#<RANGE  [ffN][ffN] : 0.0 1.0 0.0 1.0
+->  /foo/bar/methodName#?VAL
+<-  /foo/bar/methodName#<VAL  ff : 1.0 1.0
 ->  /foo/bar/methodName  ff : 0.5 0.5
 ~~~
  OSC Method that returns/expects two float values ranged 0.0-1.0 as an array
 ~~~
-->  /foo/bar/methodName#TYPE
-<-  /foo/bar/methodName##TYPE  s : "[ff]"
-->  /foo/bar/methodName#RANGE
-<-  /foo/bar/methodName##RANGE  [ffN][ffN] : 0.0 1.0 0.0 1.0
-->  /foo/bar/methodName#VAL
-<-  /foo/bar/methodName##VAL  [ff] : 1.0 1.0
+->  /foo/bar/methodName#?TYPE
+<-  /foo/bar/methodName#<TYPE  s : "[ff]"
+->  /foo/bar/methodName#?RANGE
+<-  /foo/bar/methodName#<RANGE  [ffN][ffN] : 0.0 1.0 0.0 1.0
+->  /foo/bar/methodName#?VAL
+<-  /foo/bar/methodName#<VAL  [ff] : 1.0 1.0
 ->  /foo/bar/methodName  [ff] : 0.5 0.5
 ~~~
  OSC method that returns/expects an OSC string (any OSC string):
 ~~~
-->  /foo/bar/methodName#TYPE
-<-  /foo/bar/methodName##TYPE  s : "s"
-->  /foo/bar/methodName#RANGE
-<-  /foo/bar/methodName##RANGE [NNN]:
-->  /foo/bar/methodName#VAL
-<-  /foo/bar/methodName##VAL  s : "default string"
+->  /foo/bar/methodName#?TYPE
+<-  /foo/bar/methodName#<TYPE  s : "s"
+->  /foo/bar/methodName#?RANGE
+<-  /foo/bar/methodName#<RANGE [NNN]:
+->  /foo/bar/methodName#?VAL
+<-  /foo/bar/methodName#<VAL  s : "default string"
 ->  /foo/bar/methodName s : "newString"
-->  /foo/bar/methodName#VAL
-<-  /foo/bar/methodName##VAL  s : "newString"
+->  /foo/bar/methodName#?VAL
+<-  /foo/bar/methodName#<VAL  s : "newString"
 ~~~
  OSC method that returns/expects an OSC string from a list of possible choices (the strings "one", "two", and "three")
 ~~~
-->  /foo/bar/methodName#TYPE
-<-  /foo/bar/methodName##TYPE  s : "s"
-->  /foo/bar/methodName#RANGE
-<-  /foo/bar/methodName##RANGE  [NN[sss]] : "one" "two" "three"
-->  /foo/bar/methodName#VAL
-<-  /foo/bar/methodName##VAL  s : "one"
+->  /foo/bar/methodName#?TYPE
+<-  /foo/bar/methodName#<TYPE  s : "s"
+->  /foo/bar/methodName#?RANGE
+<-  /foo/bar/methodName#<RANGE  [NN[sss]] : "one" "two" "three"
+->  /foo/bar/methodName#?VAL
+<-  /foo/bar/methodName#<VAL  s : "one"
 ->  /foo/bar/methodName  s : "two"
-->  /foo/bar/methodName#VAL
-<-  /foo/bar/methodName##VAL  s : "two"
+->  /foo/bar/methodName#?VAL
+<-  /foo/bar/methodName#<VAL  s : "two"
 ~~~
  OSC method that doesn't have a value, doesn't require a value, and will respond to any method sent to it
 ~~~
-->  /foo/bar/methodName#TYPE
-<-  /foo/bar/methodName##TYPE  N :
+->  /foo/bar/methodName#?TYPE
+<-  /foo/bar/methodName#<TYPE  N :
 ~~~
 
 
