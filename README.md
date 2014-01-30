@@ -17,6 +17,7 @@ To create a minimal query protocol for OSC that allows a client to browse and in
 The intent of this goal is to provide baseline functionality that other developers may take advantage of to construct impromptu or improvisational interfaces for dynamic environments.
 
 ###PROPOSAL
+ * The transport method chosen to convey OSC data is responsible for providing the information necessary to communicate replies and errors.  The most common implementations of OSC at this time are either TCP or UDP connections- TCP connections should be bidirectional and UDP packet headers already contain the IP address and port from which they were sent, which can be used to determine the origin of a query or reply.
  * An **OSC Query** is an OSC message with zero values whose OSC address path is the address of the node being queried appended by a number sign and question mark ("#?") and the name of the query.  Examples:
   * "/foo/bar#?INFO"  this address will dispatch the "INFO" query to the OSC destination "/foo/bar"
   * "/foo/bar#?CONTENTS"  dispatch the "CONTENTS" query to the OSC destination "/foo/bar"
