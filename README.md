@@ -6,141 +6,193 @@
 [OSNIP](https://github.com/jamoma/osnip/wiki)  
 [Minuit](https://github.com/Minuit/minuit)  
 [QLAB](http://figure53.com/qlab/docs/osc-api/)  
+[libmapper](http://libmapper.github.io/about.html)  
+[oscit](http://lubyk.org/en/software/oscit)  
  * Some definitions copied from the [OSC spec](http://opensoundcontrol.org/spec-1_0):  
   * An **OSC server** has a set of OSC Methods.  
   * **OSC methods** are the potential destinations of OSC messages received by the OSC server and correspond to each of the points of control that the application makes available.  "Invoking" an OSC method is analgous to a procedure call; it means supplying the method with arguments and causing the method's effect to take place.  
   * An OSC server's OSC Methods are arranged in a tree structure called an **OSC Address Space**.  The leaves of this tree are the **OSC Methods** and the branch nodes are called **OSC Containers**.
+ * This is the second version of this proposal, and is a substantial departure from the first version because of the feedback I got from other devs.  The initial version of this proposal described a query protocol based on a modified/expanded version of the OSC specification- other devs weren't happy about having to modify their OSC libs (or switch to modified libs), so i scrapped this approach.  OSC is good at sending simple control data over a UDP connection, and let's leave it at that: this proposal explores the OSC address space on a side channel as a wholly separate service.  This proposal is also less complete than the initial version- I've been encouraged to share this proposal sooner rather than later, so please chime in with any suggestions or corrections you have!
 
 ###GOAL
-To create a minimal query protocol for OSC that allows a client to browse and interact with a remote server's OSC address space.  The protocol should be capable of both describing the address space's structure/layout as well as the types of messages that destinations in the OSC address space are capable of both sending and receiving.  The protocol should be easily human-readable to facilitate debugging, and should have a standard set of errors to describe commonly-encountered problems.
+To establish a protocol that allows a client to browse and interact with a remote server's OSC address space.  The protocol should be capable of both describing the address space's structure/layout as well as the types of messages that destinations in the OSC address space are capable of both sending and receiving.  The protocol should be easily human-readable to facilitate debugging, and should have a standard set of errors to describe commonly-encountered problems.
 
 The intent of this goal is to provide baseline functionality that other developers may take advantage of to construct impromptu or improvisational interfaces for dynamic environments.
 
 ###PROPOSAL
- * The transport method chosen to convey OSC data is responsible for providing the information necessary to communicate replies and errors.  The most common implementations of OSC at this time are either TCP or UDP connections- TCP connections should be bidirectional and UDP packet headers already contain the IP address and port from which they were sent, which can be used to determine the origin of a query or reply.
- * An **OSC Query** is an OSC message with zero values whose OSC address path is the address of the node being queried appended by a number sign and question mark ("#?") and the name of the query.  Examples:
-  * "/foo/bar#?INFO"  this address will dispatch the "INFO" query to the OSC destination "/foo/bar"
-  * "/foo/bar#?CONTENTS"  dispatch the "CONTENTS" query to the OSC destination "/foo/bar"
- * All OSC destinations (both methods and containers) respond to a series of queries.  These queries allow the address space to be explored and describe how to interact with the OSC methods.  The possible defined queries are:
-  * **INFO**    Returns an OSC message with a single OSC string containing a human-readable description of this container/method
-  * **CONTENTS**    Returns an OSC message with two arrays.  The first array contains OSC strings with the names of the OSC containers (branches) inside this node, the second array contains OSC strings with the names of the OSC methods (leaves) inside this node.
-  * **ACCESS**    Returns an integer that represents a binary mask.  Returns 0 if there is no value associated with this OSC destination, 1 if the value may only be retrieved, 2 if the value may only be set, or 3 if the value may be both retrieved and set
-  * **TYPE**    Returns an OSC message with a single OSC string that contains an OSC type tag string.  If you query the value of this OSC destination, your reply will have this type tag string.  Correspondingly, if you send an OSC message to this destination, the message is required to have this type tag string.  It is presumed that an OSC method will only have a single type of value (an OSC method with the declared type "f" should not be expected to respond to OSC messages with integer values).  If an OSC method doesn't have a value and doesn't require a value to be sent to it, the "TYPE" query should return an OSC "nil" value.
-  * **VAL**    Returns an OSC message with the current value of this OSC destination.  The OSC type tag of this message will be the OSC string returned by the "TYPE" query.
-  * **RANGE**    Returns an OSC message with a number of arrays- there should be one array for each value it returns.  In other words, there should be one array for each value in the OSC type tag string returned by the TYPE query.
-    * The first item in each array is the minimum value of the range (or the OSC value "nil" if there's no minimum or the value isn't ranged)
-    * The second item in the array is the maximum value of the range (or the OSC value "nil" if there's no max range or the value isn't ranged).
-    * If the value has a minimum or maximum range, the third value in the array should be "nil" (likely the most common occurrence).  If the value doesn't have a range- if the value is expressed as an item chosen from a list of possible values- the third value in the array should be another array containing the list of available choices.
- * If the query type is unrecognized (for example, "/foo/bar#?GABBAGABBAHEY"), the server should return an error of type 400 (bad request/syntax error) so the client knows that this query isn't supported.  This allows specific applications to develop more specialized query systems without causing significant conflicts with other software that supports this basic query protocol.
- * The response to an OSC query is either a **REPLY** (if the query was successful) or an **ERROR** (if something went wrong).
-  * **REPLIES**    If the response is a reply, the query executed successfully and the server needs to send some data back to the client which issued the query.  This response is an OSC message, and the address of this message contains the address of the query as well as the query itself, separated by a number sign and a less-than sign("#<").  The values in this message depend on the reply, and it's assumed that the client will be able to locate the original query from the reply's address (which contains the address and type of the original query).
-  * **ERRORS**    If the response is an error, there was a problem with the query and the client needs to be notified.  Like replies, errors are just OSC messages, and the address of the message contains the address of the query as well as the query itself- unlike replies, these are separated by a number sign and an exclamation point ("#!").  Also unlike replies, error messages will always have exactly one value, and that value will either be an integer or a string: if it's an integer the value describes one of the defined error values listed below, if it's a string the error is user-defined somehow and the string describes it in greater detail.  the defined errors are:
-    * **204**  (no content- server received request, but the request is inappropriate in some way- querying VAL or RANGE when ACCESS returned 0, for example)
-    * **400**  (bad request/syntax error- corrupt message/packet, unrecognized query, etc)
-    * **404**  (no container or method was found at the supplied OSC address)
-    * **406**  (not acceptable- the OSC message type doesn't match the expected type tag string)
-    * **408**  (request time-out- this error should be generated by the client if it doesn't hear back from the server in a specified time period)
+ * Unlike the majority of OSC libraries, this "protocol" should probably be implemented using TCP connections to transfer data in the interest of ensuring complete delivery regardless as to the size of the payload.  If we're going to be using TCP-based connections to transfer text-based representations of data structures and we want the end product to be widely compatible, HTTP seems like the natural starting point for a basic communication protocol (reminder: we can't use OSC here because it would require using a modified version of the OSC spec).
+  * Information about which ports clients and servers are listening to for OSC/UDP data can be exchanged as request/reply headers within HTTP transactions- the lib will need to be made aware of which ports you're listening to, but once the lib knows which ports you're using the protocol can ensure that any clients of your address space will have all the information they need to send OSC/UDP data directly to it (and vice versa).  This is useful if we want to use OSC/UDP to stream values between address spaces, reserving HTTP/TCP for sharing info about the structure and attributes of the address spaces.
+  * The server should probably be an HTTP/1.1 server (capable of pipelining/maintaining a persistent connection/chunked transfer encoding), but i don't have any experience worth mentioning with these tools so if your experience means you have advice/cautionary tales, please let me know!  Barring that, this will be a "learn-as-you-go" experience...
+ * If the goal of this server is to provide a data description of an OSC address space, it should consistently reply to queries/messages with one or more commonly recognizable data container formats.  I'm writing this proposal under the assumption that the server replies will be JSON blobs (presumably content-type "application/json) because that's what everybody who got in touch with me said they wanted to work with.
+ * Instances of this server should advertise their presence (and look for other servers) on the local network using bonjour/zeroconf- i suggest using the service type "_oscjson._tcp.", but any service name will suffice as long as we're all using the same one.  Connections to clients on remote networks can be established by the traditional means (manually entering an IP address/joining a VPN/etc).
+ * HTTP is fundamentally a request/reply protocol- a client is requesting a piece of information from a server, and a TCP connection is maintained at least until a reply is issued (or much longer- persistent connections could potentially be used to "push" server notifications to clients).  HTTP requests are specified using URLs, the format of which is likely familiar:
+ 
+ ~~~
+         foo://example.com:8042/over/there?name=ferret#nose
+         \_/   \______________/\_________/ \_________/ \__/
+          |           |            |            |        |
+       scheme     authority       path        query   fragment
+ ~~~
+ 
+ (ref: http://tools.ietf.org/html/rfc3986)
+ 
+ In addition to providing a mechanism for specifying the destination of the request ('path' describes an OSC method or container in the address space), this format also provides a simple, open-ended mechanism for packing additional parameters or values into the URL (via 'query'), and explicitly requesting that the reply be limited to a single attribute ('fragment') for the sake of brevity.
+ * Error handling is relatively simple- the initial response line to any HTTP query includes a standard response code and a reason phrase.  Examples of errors could include:
+  * **204**  (no content- server received request, but the request is inappropriate in some way- querying VALUE or RANGE when ACCESS returned 0, for example)
+  * **400**  (bad request/syntax error- corrupt message/packet, unrecognized query, etc)
+  * **404**  (no container or method was found at the supplied OSC address)
+  * **408**  (request time-out- this error should be generated by the client if it doesn't hear back from the server in a specified time period)
+ * Retrieving the "VALUE" of a node- or the value of a particular attribute of the node- in a remote OSC address space was one of the initial goals of this project, and we can use the "fragment" portion of a URL to quickly and intuitively request the attribute of a particular node ( http://ip:port/abs/path#VALUE ).
+ * Assuming the HTTP server is returning a JSON blob, these are some of the expected string:value pairs found in the returned blob.  Establishing a minimum set of attributes to be implemented should be a goal with the first implementation of this spec- please open an issue to discuss any attributes I may have overlooked/changes you'd like to see made to these attributes.
+  * **DESCRIPTION**    The value stored with this string is a string containing a human-readable description of this container/method.  This attribute will only be used within a JSON object that describes an OSC node.
+  * **CONTENTS**    The value stored with this string is a JSON object containing string:value pairs.  the strings correspond to the names of sub-nodes, and the values stored with them are JSON objects that describe the sub-nodes.  If the "CONTENTS" attribute is used, a single JSON object can be used to fully describe the attributes and hierarchy of every OSC method and container in an address space.  This attribute will only be used within a JSON object that describes an OSC node.  If this string:value pair is missing, the corresponding node should be assumed to have no contents.  Implementation note: should the "CONTENTS" attribute always be returned by default if it's non-nil?  I'm leaning towards "yes", but I'm interested in hearing what other people think.
+  * **ACCESS**    The value stored with this string is an integer that represents a binary mask.  Returns 0 if there is no value associated with this OSC destination, 1 if the value may only be retrieved, 2 if the value may only be set, or 3 if the value may be both retrieved and set.  This attribute will only be used within a JSON object that describes an OSC node.
+  * **TYPE**    The value stored with this string is a string- this is the OSC type tag string used by the OSC method at this address.  The number of elements returned in the "VALUE" attribute's array- as well as their type- is determined by this string- likewise, any OSC messages sent to this method should send data of the type and quantity described in this type tag string.  It is presumed that an OSC method will only have a single type of value (an OSC method with the declared type "f" should not be expected to respond to OSC messages with integer values).  If an OSC method doesn't have a value and doesn't require a value to be sent to it (usually an indicator that this node is purely a container), this attribute will be omitted.  This attribute will only be used within a JSON object that describes an OSC node.
+  * **VALUE**    The value stored with this string is always an array- this array contains one or more values (the number and type of values is described by the "TYPE" attribute).  This attribute will only be used within a JSON object that describes an OSC node, and may be omitted if the OSC node doesn't have a value
+  * **RANGE**    The value stored at this string is an array, which in turn contains a number of sub-arrays.  There should be one sub-array for each value returned (or expected) by this OSC method (this attribute is supposed to describe the range of expected values- as such, there needs to be a description of the range for each value).  In other words, there should be one sub-array for each of the types described in the "TYPES" attribute.  The "RANGE" attribute should only be used within a JSON object that describes an OSC node, and may be omitted if the OSC node doesn't have a value.
+    * The first item in each sub-array is the minimum value of the range (or the "null" value if there's no minimum or the value isn't ranged).
+    * The second item in each sub-array is the maximum value of the range (or the "null" value if there's no maximum or the value isn't ranged).
+    * If the value has a min or max range, the third value in the array should be "null" (likely the most common occurrence).  If the value doesn't have a range- if the value is expressed as an item chosen from a list of possible values- the third value in the array should be another array containing the list of available value choices.
+  * **FULL_PATH**    The value stored with this string is the full OSC address path of the OSC node returning this object.  This attribute will only be used within a JSON object that describes an OSC node, and may not be included in every JSON object describing an OSC node.  Depending on implementation details, it may/may not make sense to include this attribute all the time.
+  * **PATH_CHANGED**    The value stored with this string is the OSC address path string of the OSC node on the server whose contents have changed.  If the node "/foo/bar" on a remote address space gets deleted, clients will receive a JSON object with PATH_CHANGED: "/foo".
+ * Notifying clients of changes to the server's underlying address space is an important task.  Like many aspects of this proposal, I'm unsure as to the best way to implement this (and will remain unsure until I've done some experimenting), but it seems like this would be fairly easy to implement with a persistent HTTP connection (the server would simply pass the client a JSON object with the appropriate PATH_CHANGED string:value pair).
+ * The ability to "stream" values from a remote address space is something that devs from the Jamoma project have requested.  I'm still unsure of the details/best way to implement this, but here are a couple ideas in no particular order:
+  * As mentioned earlier, the "query string" part of a URL can be used pass variables/parameters from client to server- a client could use this to request that the server start/stop streaming values to it (http://ip:port/abs/path?listen=true).  I'm not sure if this is "good design" or not, but it would be easy to use keywords to add functionality in this manner to the server's GET method...
+  * Streaming the actual values back could be performed with simple OSC/UDP messages- this proposal (and presumably the lib implementation of it) is built to accompany an existing OSC service.  As such, it will know what port you're listening for OSC traffic on, and it can reasonably expect to be able to query this information from other instances.  Implementation note: the server should probably have an explicit TTL on these streams so if a client "forgets" to terminate it the stream will time out.
+
 
 ###EXAMPLES
-In the below examples, messages from client -> server (queries) are denoted with "->", the reverse indicates a message from server to client (replies/errors).  The message formatting is as follows:
-
-Direction | Message Address | Message Type Tag String | : | Message values: space-delineated, strings in quotes
---- | --- | --- | --- | ---
--> | /foo/bar | ifs | : | 1 2.0 "three"
--> | /foo/bar2#?VAL |   |   |   
-<- | /foo/bar2#<VAL | i | : | 1
--> | /foo/bar3#?VAL |   |   |   
-<- | /foo/bar3#!VAL | i | : | 404
-
- Exploring the OSC address space (the reply indicates one container and several methods)  
-~~~
-->  /foo/bar#?CONTENTS
-<-  /foo/bar#<CONTENTS [s][ssss]:"containerNameA" "methodName1" "methodName2" "methodName3" "methodName4";
-~~~
- OSC method with inaccessible values
-~~~
-->  /foo/bar/methodName#?ACCESS
-<-  /foo/bar/methodName#<ACCESS  i : 0
-~~~
- OSC method that is write-only
-~~~
-->  /foo/bar/methodName#?ACCESS
-<-  /foo/bar/methodName#<ACCESS  i : 2
-->  /foo/bar/methodName#?VAL
-<-  /foo/bar/methodName#!VAL  i : 204
-~~~
- OSC method that is read-only
-~~~
-->  /foo/bar/methodName#?ACCESS
-<-  /foo/bar/methodName#<ACCESS  i : 1
-->  /foo/bar/methodName  f : 0.5
-<-  <the server might not respond at all>, or /foo/bar/methodName#!  i : 204
-~~~
- OSC methods with fully read/writable values
-~~~
-->  /foo/bar/methodName#?ACCESS
-<-  /foo/bar/methodName#<ACCESS  i : 3
-~~~
- OSC Method that returns/expects a single float value, ranged 0.0-1.0
-~~~
-->  /foo/bar/methodName#?TYPE
-<-  /foo/bar/methodName#<TYPE  s : "f"
-->  /foo/bar/methodName#?RANGE
-<-  /foo/bar/methodName#<RANGE  [ffN] : 0.0 1.0
-->  /foo/bar/methodName#?VAL
-<-  /foo/bar/methodName#<VAL  f : 1.0
-->  /foo/bar/methodName  f : 0.5
-~~~
- OSC Method that returns/expects two float values (not an array, just two float values in the OSC message), ranged 0.0-1.0
-~~~
-->  /foo/bar/methodName#?TYPE
-<-  /foo/bar/methodName#<TYPE  s : "ff"
-->  /foo/bar/methodName#?RANGE
-<-  /foo/bar/methodName#<RANGE  [ffN][ffN] : 0.0 1.0 0.0 1.0
-->  /foo/bar/methodName#?VAL
-<-  /foo/bar/methodName#<VAL  ff : 1.0 1.0
-->  /foo/bar/methodName  ff : 0.5 0.5
-~~~
- OSC Method that returns/expects two float values ranged 0.0-1.0 as an array
-~~~
-->  /foo/bar/methodName#?TYPE
-<-  /foo/bar/methodName#<TYPE  s : "[ff]"
-->  /foo/bar/methodName#?RANGE
-<-  /foo/bar/methodName#<RANGE  [ffN][ffN] : 0.0 1.0 0.0 1.0
-->  /foo/bar/methodName#?VAL
-<-  /foo/bar/methodName#<VAL  [ff] : 1.0 1.0
-->  /foo/bar/methodName  [ff] : 0.5 0.5
-~~~
- OSC method that returns/expects an OSC string (any OSC string):
-~~~
-->  /foo/bar/methodName#?TYPE
-<-  /foo/bar/methodName#<TYPE  s : "s"
-->  /foo/bar/methodName#?RANGE
-<-  /foo/bar/methodName#<RANGE [NNN]:
-->  /foo/bar/methodName#?VAL
-<-  /foo/bar/methodName#<VAL  s : "default string"
-->  /foo/bar/methodName s : "newString"
-->  /foo/bar/methodName#?VAL
-<-  /foo/bar/methodName#<VAL  s : "newString"
-~~~
- OSC method that returns/expects an OSC string from a list of possible choices (the strings "one", "two", and "three")
-~~~
-->  /foo/bar/methodName#?TYPE
-<-  /foo/bar/methodName#<TYPE  s : "s"
-->  /foo/bar/methodName#?RANGE
-<-  /foo/bar/methodName#<RANGE  [NN[sss]] : "one" "two" "three"
-->  /foo/bar/methodName#?VAL
-<-  /foo/bar/methodName#<VAL  s : "one"
-->  /foo/bar/methodName  s : "two"
-->  /foo/bar/methodName#?VAL
-<-  /foo/bar/methodName#<VAL  s : "two"
-~~~
- OSC method that doesn't have a value, doesn't require a value, and will respond to any method sent to it
-~~~
-->  /foo/bar/methodName#?TYPE
-<-  /foo/bar/methodName#<TYPE  N :
-~~~
-
+ * Basic "GET" query, returns a two-level address space with four OSC nodes, one of which is a container (/baz) and three of which are methods (/foo, /bar, /baz/qux).  Note that the default behavior is to return a full description of the destination node and all of its contents.
+ 
+ **http://ip:port/**
+ ~~~
+	{
+		"DESCRIPTION": "root node",
+		"FULL_PATH": "/",
+		"ACCESS": 0,
+		"CONTENTS": {
+			"foo": {
+				"DESCRIPTION": "demonstrates a read-only OSC node- single float value ranged 0-100",
+				"FULL_PATH": "/foo",
+				"ACCESS": 1,
+				"TYPE": "f",
+				"VALUE": [
+					0.5
+				],
+				"RANGE": [
+					[0.0, 100.0, null]
+				]
+			},
+			"bar": {
+				"DESCRIPTION": "demonstrates a read/write OSC node- two ints with different ranges",
+				"FULL_PATH": "/bar",
+				"ACCESS": 3,
+				"TYPE": "ii",
+				"VALUE": [
+					4,
+					51
+				],
+				"RANGE": [
+					[0, 50, null],
+					[51, 100, null]
+				]
+			},
+			"baz": {
+				"DESCRIPTION": "simple container node, with one method- qux",
+				"FULL_PATH": "/baz",
+				"ACCESS": 0,
+				"CONTENTS": {
+					"qux":	{
+						"DESCRIPTION": "read/write OSC node- accepts one of several string-type inputs",
+						"FULL_PATH": "/baz/qux",
+						"ACCESS": 3,
+						"TYPE": "s",
+						"VALUE": [
+							"half-full"
+						],
+						"RANGE": [
+							[null, null, ["empty", "half-full", "full"]]
+						]
+					}
+				}
+			}
+		}
+	}
+ ~~~
+ 
+ * Same address space, but this is what you'd see if the GET query's address was slightly different (this time we're just trying to GET one specific container node and its contents).  Again, the default is to fetch the full "tree" of the specified node and all its sub-nodes.
+ 
+ **http://ip:port/baz**
+ 
+ ~~~
+	{
+		"DESCRIPTION": "simple container node, with one method- qux",
+		"FULL_PATH": "/baz",
+		"ACCESS": 0,
+		"CONTENTS": {
+			"qux":	{
+				"DESCRIPTION": "read/write OSC node- accepts one of several string-type inputs",
+				"FULL_PATH": "/baz/qux",
+				"ACCESS": 3,
+				"TYPE": "s",
+				"VALUE": [
+					"half-full"
+				],
+				"RANGE": [
+					[null, null, ["empty", "half-full", "full"]]
+				]
+			}
+		}
+	}
+ ~~~
+ 
+ * This is one way the "fragment" portion of a URL can be used to request a single attribute from a node in a remote address space:
+ 
+ **http://ip:port/foo#VALUE**
+ 
+ ~~~
+ 	{
+ 		"VALUE": [
+ 			0.5
+ 		]
+ 	}
+ ~~~
+ 
+ * The same technique can be used to request any attribute from a given node:
+ 
+ **http://ip:port/baz/qux#RANGE**
+ 
+ ~~~
+ 	{
+ 		"RANGE": [
+ 			[null, null, ["empty", "half-full", "full"]]
+ 		]
+ 	}
+ ~~~
+ 
+ * Assuming a persistent HTTP connection, this is what the client would receive if the node "/baz/qux" is deleted from the remote address space:
+ 
+ ~~~
+ 	{
+ 		"PATH_CHANGED": "/baz"
+ 	}
+ ~~~
+ 
+ * This is how you would request that the remote server begin streaming any updates to the remote address space's "/foo" node back to the client server:
+ 
+ **http://ip:port/foo?LISTEN=true**
+ 
+ ...at this point, the remote server would start sending values from "/foo" back to the client, though it is yet to be determined exactly how those values should be sent back.  The easiest and most "natural" solution to my mind would be to send a stream of OSC messages via UDP from server to client (as mentioned earlier, OSC listening port info can be exchanged in request/reply headers), but it would also be possible to implement this functionality over a persistent HTTP connection.
+ 
+ Regardless as to implementation, here's how you would request that the remote server stop streaming any updates to the client:
+ 
+ **http://ip:port/foo?LISTEN=false**
+ 
+ * This pattern can be extended further, and more keywords can be adopted to add more functionality.  For example, if we want to use OSC messages to enable value streaming, it would be nice if the OSC address paths of those messages could be customized (instead of just echoing the address from the remote server).  This sort of behavior could be enabled using a "TARGET_ADDRESS" keyword in the URL's query string:
+ 
+ **http://ip:port/foo?LISTEN=true&TARGET_ADDRESS=/dest/address/in/client**
+ 
+ ...at this point, the remote server would start sending values from "/foo" back to the client as OSC messages- and those OSC messages would be addressed to "/dest/address/in/client".
 
 ****
 ****
