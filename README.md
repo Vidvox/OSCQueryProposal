@@ -8,6 +8,7 @@
 [QLAB](http://figure53.com/qlab/docs/osc-api/)  
 [libmapper](http://libmapper.github.io/about.html)  
 [oscit](http://lubyk.org/en/software/oscit)  
+UBI-OSC (presented at ICMC/SMC/2014) : [paper](http://mobilesound.org/ubi-osc.pdf) - [poster](http://mobilesound.org/ubi/paper/ubiosc-poster.pdf) - [mailing list](http://mobilesound.org/ubi)
  * Some definitions copied from the [OSC spec](http://opensoundcontrol.org/spec-1_0):  
   * An **OSC server** has a set of OSC Methods.  
   * **OSC methods** are the potential destinations of OSC messages received by the OSC server and correspond to each of the points of control that the application makes available.  "Invoking" an OSC method is analgous to a procedure call; it means supplying the method with arguments and causing the method's effect to take place.  
