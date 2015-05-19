@@ -8,6 +8,7 @@
 [QLAB](http://figure53.com/qlab/docs/osc-api/)  
 [libmapper](http://libmapper.github.io/about.html)  
 [oscit](http://lubyk.org/en/software/oscit)  
+[AVBC](http://grouper.ieee.org/groups/1722/1/contributions/2010/1722.1-koftinoff-AVBC-2010-04-07-v1.pdf)  
  * UBI-OSC (presented at ICMC/SMC/2014) is an interesting look at some of the possibilities that can be realized with a shared OSC interface that is standardized to allow interoperation between a number of independent devices : [paper](http://mobilesound.org/ubi-osc.pdf) - [poster](http://mobilesound.org/ubi/paper/ubiosc-poster.pdf) - [mailing list](http://mobilesound.org/ubi)
  * Some definitions copied from the [OSC spec](http://opensoundcontrol.org/spec-1_0):  
   * An **OSC server** has a set of OSC Methods.  
@@ -19,6 +20,9 @@
 To establish a protocol that allows a client to browse and interact with a remote server's OSC address space.  The protocol should be capable of both describing the address space's structure/layout as well as the types of messages that destinations in the OSC address space are capable of both sending and receiving.  The protocol should be easily human-readable to facilitate debugging, and should have a standard set of errors to describe commonly-encountered problems.
 
 The intent of this goal is to provide baseline functionality that other developers may take advantage of to construct impromptu or improvisational interfaces for dynamic environments.
+
+###IMPLEMENTATIONS
+[@jcelerier](https://github.com/jcelerier) has started work on the first implementation of this protocol.  It's called coppa (common protocol for parameters) and it [can be found here](https://github.com/jcelerier/coppa).
 
 ###PROPOSAL
  * Unlike the majority of OSC libraries, this "protocol" should probably be implemented using TCP connections to transfer data in the interest of ensuring complete delivery regardless as to the size of the payload.  If we're going to be using TCP-based connections to transfer text-based representations of data structures and we want the end product to be widely compatible, HTTP seems like the natural starting point for a basic communication protocol (reminder: we can't use OSC here because it would require using a modified version of the OSC spec).
