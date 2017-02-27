@@ -55,23 +55,28 @@ The intent of this goal is to provide baseline functionality that other develope
   * **FULL_PATH**    The value stored with this string is the full OSC address path of the OSC node described by this object.
   * **CONTENTS**    The value stored with this string is a JSON object containing string:value pairs.  the strings correspond to the names of sub-nodes, and the values stored with them are JSON objects that describe the sub-nodes.  If the "CONTENTS" attribute is used, a single JSON object can be used to fully describe the attributes and hierarchy of every OSC method and container in an address space.  This attribute will only be used within a JSON object that describes an OSC container.  If this string:value pair is missing, the corresponding node should be assumed to be an OSC method (rather than a container).
   * **DESCRIPTION**    The value stored with this string is a string containing a human-readable description of this container/method.  While not all OSC nodes are required to return a human-readable description, this attribute is listed as "required" because every implementation of this protocol should be able to recognize it.
+  * **HOST_INFO**    This attribute will never be provided by the server by default- it will only be provided if the client software explicitly queries this attribute.  The value returned will always be a JSON object, with zero or more of the following keys:
+    * **NAME**    The value stored with this key is a human-readable string describing the name of the host.
+    * **EXTENSIONS**    The value stored with this string is a JSON object describing the various optional attributes listed below.  The keys for this object are the various attribute keys, and the values are boolean values indicating whether or not the host supports the attribute (if an optional attribute is not listed, the client should assume that it isn't supported).
 
 ###OPTIONAL ATTRIBUTES
  * In addition to the minimum/required string:value pairs described above, implementations of this protocol can return pairs which describe additional attributes that, while not strictly necessary to describing the layout of an address space, are useful for working with OSC nodes that accept/expect typed values.  Here are some suggested string:value pairs you can return to describe in greater detail OSC methods which expect number values:
   * **TYPE**    The value stored with this string is a string- this is the OSC type tag string used by the OSC node at this address.  The number of elements returned in the "VALUE", "RANGE", and "UNIT" attribute arrays- as well as their type- is determined by this string.  Likewise, any OSC messages sent to this method should send data of the type and quantity described in this type tag string.  It is presumed that an OSC method will only have a single type of value (an OSC method with the declared type "f" should not be expected to respond to OSC messages with integer values).  If an OSC method doesn't have a value and doesn't require a value to be sent to it (usually an indicator that this node is purely a container), this attribute will be omitted.
   * **ACCESS**    The value stored with this string is an integer that represents a binary mask.  Returns 0 if there is no value associated with this OSC destination, 1 if the value may only be retrieved, 2 if the value may only be set, or 3 if the value may be both retrieved and set.
   * **VALUE**    The value stored with this string is always an array- this array contains one or more values (the number and type of values is described by the "TYPE" attribute).
-  * **RANGE**    The value stored at this string is an array, which in turn contains a number of sub-arrays.  There should be one sub-array for each value returned (or expected) by this OSC method (this attribute is supposed to describe the range of expected values- as such, there needs to be a description of the range for each value).  In other words, there should be one sub-array for each of the types described in the "TYPES" attribute.  The "RANGE" attribute may be omitted if the OSC node doesn't have a value.
-    * The first item in each sub-array is the minimum value of the range (or the "null" value if there's no minimum or the value isn't ranged).
-    * The second item in each sub-array is the maximum value of the range (or the "null" value if there's no maximum or the value isn't ranged).
-    * If the value has a min or max range, the third value in the array should be "null" (likely the most common occurrence).  If the value doesn't have a range- if the value is expressed as an item chosen from a list of possible values- the third value in the array should be another array containing the list of available value choices.
+  * **RANGE**    The value stored at this string is an array that should contain one JSON object for each of the types described in the "TYPES" attribute.  Each JSON object in the array describes the range of the corresponding value from "TYPES", using one or more of the following keys:
+    * If the JSON object in the "RANGE" array has a value for the key "**MIN**", the accompanying value is the minimum expected value.  If no object is specified for the "MIN" key then the host hasn't supplied a minimum value.
+    * If the JSON object in the "RANGE" array has a value for the key "**MAX**", the accompanying value is the maximum expected value.  If no object is specified for the "MAX" key then the host hasn't supplised a maximum value.
+    * If the JSON object in the "RANGE" array has a value for the key "**VALS**", the accompanying value is an array listing the only acceptable values to send to the method.  This is typically used to describe a series of menu options in a pop-up button, but can also be applied to numeric values.
   * **TAGS**    The value stored at this string is an array of strings describing the OSC node- these tags are intended to serve an identifying role, making it possible to search or filter OSC nodes.
   * **CLIPMODE**    If provided, the value stored with this string is always an array- this array contains one string per value returned (or expected) by this OSC method (this attribute is supposed to describe the clipping mode of expected values, so there needs to be a description of the mode for each value).  The string should be either "none", "low", "high", or "both".  The CLIPMODE attribute acts as a "hint" to how the OSC method handles values outside the indicated RANGE- "none" indicates that no clipping is performed/the OSC method will try to use any value you send it, "low" indicates that values below the min range will be clipped to the min range, "high" indicates that values above the max range will be clipped to the max range, and "both" is self-explanatory.  This attribute is optional, and if it doesn't exist, software that expects it should assume that no clipping will be performed.
-  * **UNIT**    If provided, the value stored with this string is always an array- this array contains one string per value returned (or expected) by this OSC method (this attribute is supposed to describe the unit of the expected values, so there needs to be one unit per value).  The string should describe the units of the value, from a list of commonly-accepted values (currently being assembled).  examples are assumed to be "hz", "meters", "seconds", etc.
+  * **UNIT**    If provided, the value stored with this string is always an array- this array contains one string per value returned (or expected) by this OSC method (this attribute is supposed to describe the unit of the expected values, so there needs to be one unit per value).  The string should describe the units of the value, from a list of commonly-accepted values [currently being assembled here](units.txt).  examples are assumed to be "hz", "meters", "seconds", etc.
+  * **CRITICAL**    If provided, the value stored with this array is expected to be a boolean value (true/false) used to indicate that the messages sent to this address are of particular importance, and their delivery needs to be guaranteed.  If both the host and client support it (this attribute is optional), they should use a TCP connection of some sort to guarantee delivery of the message.
+ * The object stored with the various optional attributes is frequently an array, and these arrays typically have a number of elements equal to the number of values the node expects to receive (one object in the "RANGE" attribute array per value, one object in the "CLIPMODE" attribute array per value, etc).  If an optional attribute has multiple elements that all share the same value, it's acceptable to only list a single element (which clients will assume corresponds to all data types associated with the attribute).
 
  ###BI-DIRECTIONAL COMMUNICATION
- * In addition to describing attributes of remote OSC methods, JSON string:value pairs can be used to convey messages about specific events that clients need to respond to, or any other data that can be conveyed by serializing to JSON.
-  * **PATH_CHANGED**    The value stored with this string is the OSC address path string of the OSC node on the server whose contents have changed.  If a node is added, deleted, or its path is changed, the path to its parent node is the value stored with this string- for example, if the node "/foo/bar" on a remote address space gets deleted, clients will receive a JSON object with PATH_CHANGED: "/foo".
+ * In addition to describing attributes of remote OSC methods, JSON objects can also be used to describe server-side events that need to be communicated to clients.  The "**COMMAND**" key in a JSON object can be used to store a string describing the command, while the "**DATA**" key can be used to store a value accompanying the COMMAND.
+  * **PATH_CHANGED**    If the value stored with the "COMMAND" key is "PATH_CHANGED", the value stored at the accompanying "DATA" key will be a string describing an address in the server's address space whose contents have changed.  If a node is added, deleted, or its path is changed, the path to its parent node is the "DATA" value- for example, if the node "/foo/bar" on a remote address space gets deleted, clients will receive a JSON object with "COMMAND" set to "PATH_CHANGED" and "DATA" set to "/foo".
  * Notifying clients of changes to the server's underlying address space is an important task.  Like many aspects of this proposal, I'm unsure as to the best way to implement this (and will remain unsure until I've done some experimenting), but it seems like this would be fairly easy to implement with WebSockets (the client would establish a WebSocket connection with the server, and from that point onwards the server can "push" data to the client).  While useful, this is also optional- minimal implementations of this protocol (perhaps running on embedded hardware) can skip this functionality to save resources without affecting the server's ability to present its basic attributes/address space.
  * The ability to "stream" values from a remote address space is something that devs from the Jamoma project have requested.  I'm still unsure of the details/best way to implement this, but here are a couple ideas in no particular order:
   * As mentioned earlier, the "query string" part of a URL can be used pass variables/parameters from client to server- a client could use this to request that the server start/stop streaming values to it (http://ip:port/abs/path?listen=true).  I'm not sure if this is "good design" or not, but it would be easy to use keywords to add functionality in this manner to the server's GET method...
@@ -98,7 +103,10 @@ The intent of this goal is to provide baseline functionality that other develope
 					0.5
 				],
 				"RANGE": [
-					[0.0, 100.0, null]
+					{
+						"MIN": 0.0,
+						"MAX": 100.0
+					}
 				]
 			},
 			"bar": {
@@ -111,8 +119,14 @@ The intent of this goal is to provide baseline functionality that other develope
 					51
 				],
 				"RANGE": [
-					[0, 50, null],
-					[51, 100, null]
+					{
+						"MIN": 0,
+						"MAX": 50
+					},
+					{
+						"MIN": 51,
+						"MAX": 100
+					}
 				]
 			},
 			"baz": {
@@ -129,7 +143,9 @@ The intent of this goal is to provide baseline functionality that other develope
 							"half-full"
 						],
 						"RANGE": [
-							[null, null, ["empty", "half-full", "full"]]
+							{
+								"VALS": [ "empty", "half-full", "full" ]
+							}
 						]
 					}
 				}
@@ -157,7 +173,9 @@ The intent of this goal is to provide baseline functionality that other develope
 					"half-full"
 				],
 				"RANGE": [
-					[null, null, ["empty", "half-full", "full"]]
+					{
+						"VALS": [ "empty", "half-full", "full" ]
+					}
 				]
 			}
 		}
@@ -183,16 +201,39 @@ The intent of this goal is to provide baseline functionality that other develope
  ~~~
  	{
  		"RANGE": [
- 			[null, null, ["empty", "half-full", "full"]]
+ 			{
+ 				"VALS": [ "empty", "half-full", "full" ]
+ 			}
  		]
  	}
  ~~~
+
+ * ...and to request basic host information about the server:
  
+ **http://ip:port/foo?HOST_INFO**
+ 
+ ~~~
+ 	{
+ 		"NAME": "My Special Server",
+ 		"EXTENSIONS" : {
+ 			"TYPE": true,
+ 			"ACCESS": true,
+ 			"VALUE": true,
+ 			"RANGE": true,
+ 			"TAGS": true,
+ 			"CLIPMODE": true,
+ 			"UNIT": true,
+ 			"CRITICAL": true
+ 		}
+ 	}
+ ~~~
+
  * Assuming a persistent HTTP connection, this is what the client would receive if the node "/baz/qux" is deleted from the remote address space:
  
  ~~~
  	{
- 		"PATH_CHANGED": "/baz"
+ 		"COMMAND": "PATH_CHANGED",
+ 		"DATA": "/baz"
  	}
  ~~~
  
