@@ -31,6 +31,7 @@ The intent of this goal is to provide baseline functionality that other develope
 
 * [@jcelerier](https://github.com/jcelerier) started work on the first implementation of this protocol called coppa (common protocol for parameters). The orignal repository is [here](https://github.com/jcelerier/coppa), but it has been since been merged into the [ossia library](https://github.com/OSSIA/libossia).
 * [@lov](https://github.com/lov) has started work on another implementation of this protocol, which [can be found here](https://github.com/lov/OSCQuery).
+* I've also put together a Cocoa framework that implements this query proposal, along with a simple browser for viewing and interacting with remote OSC query servers, which [can be found here](https://github.com/mrRay/VVOSCQueryProtocol).
 
 ## Proposal
 
@@ -68,6 +69,11 @@ Assuming the HTTP server is returning a JSON blob, these are some of the expecte
 * **HOST_INFO**    This attribute will never be provided by the server by default- it will only be provided if the client software explicitly queries this attribute.  The value returned will always be a JSON object, with zero or more of the following keys:
     * **NAME**    The value stored with this key is a human-readable string describing the name of the host.
     * **EXTENSIONS**    The value stored with this string is a JSON object describing the various optional attributes listed below.  The keys for this object are the various attribute keys, and the values are boolean values indicating whether or not the host supports the attribute (if an optional attribute is not listed, the client should assume that it isn't supported).
+    * **OSC_IP**    The value stored with this string is a string describing the IP address at which the OSC server corresponding to this OSC query server can be reached.  If there is no value stored at this string, it should be assumed that the OSC server can be reached at the same network address as the OSC query server which is serving this request.
+    * **OSC_PORT**    The value stored with this string is an integer describing the port at which this OSC address can be reached.  This value should always be provided- its absence will force clients to make assumptions about how to send OSC data back to the server.
+    * **OSC_TRANSPORT**    The value stored with this string is a string describing how to reach the OSC server associated with this query server.  The string is expected to be either "**TCP**" or "**UDP**".  If there is no value stored at this string, it should be assumed that the OSC server expects to receive UDP messages.
+    * **WS_IP**    The value stored with this string is a string describing the IP address at which the WebSocket server corresponding to this OSC query server can be reached.  If there is no value stored at this string, it should be assumed that the WebSocket server can be reached at the same network address as the OSC query server which is serving this request.
+    * **WS_PORT**    The value stored with this string is an integer describing the port at which the WebSocket server can be reached.  If there is no value stored at this string, it should be assumed that the WebSocket server corresponding to this OSC query server will use the same port as the OSC query server which is serving this request.
 
 ## Optional Attributes
 
