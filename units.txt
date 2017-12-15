@@ -42,7 +42,7 @@ time.second
 time.bark
 time.bpm
 time.cents
-time.fps
+time.hz
 time.mel
 time.midinote
 time.ms
