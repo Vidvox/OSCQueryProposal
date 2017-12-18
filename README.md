@@ -134,6 +134,11 @@ Bi-directional communication between a server and each of its clients is an opti
 * **PATH_CHANGED**    If the client receives a websocket message with "PATH_CHANGED" as the provided "COMMAND", the server is indicating that a method in the OSC address space has changed and the client should request its structure as soon as possible.  The value stored with "DATA" is a string describing the path in the OSC address space that has changed- the method corresponding to this path (and any methods it contained) must all be "reloaded" by the client.
 	* This message is sent after any action that would result in a change to the structure of the OSC address space- adding OSC methods, removing OSC methods, and renaming OSC methods would all result in a "PATH_CHANGED" message.
 	* If the server has to send multiple "PATH_CHANGED" messages to each client, it is acceptable- but not required- to coalesce these messages, sending a single "PATH_CHANGED" message that encompasses all of the individual "PATH_CHANGED" messages by passing the highest-level common path shared by the messages.
+* **PATH_RENAMED**    If the client receives a websocket message with "PATH_RENAMED" as the provided "COMMAND", the server is indicating that a method in the OSC address space has been renamed.  The value stored with "DATA" is a JSON object with two keys: "**OLD**" and "**NEW**".
+	* **OLD**    The value stored with this key is a string describing the OSC address of the method that is being renamed.
+	* **NEW**    The value stored with this key is a string describing the new OSC address of the OSC method described by **OLD**.
+* **PATH_REMOVED**    If the client receives a websocket message with "PATH_REMOVED" as the provided "COMMAND", the server is indicating that a method in the OSC address space has been deleted.  The value stored with "DATA" is a string describing the OSC method that has been removed from the server's address space.
+* **PATH_ADDED**    If the client receives a websocket message with "PATH_ADDED" as the provided "COMMAND", the server is indicating that a method in the OSC address space has been deleted.  The value stored with "DATA" is a string describing the OSC method that has been added to the server's address space.
 
 ## Examples
 
