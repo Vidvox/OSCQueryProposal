@@ -142,7 +142,7 @@ Bi-directional communication between a server and each of its clients is an opti
 	* Clients that are receiving values from a server because they made a LISTEN request are responsible for updating any local records they maintain with the new address of any OSC methods that might be affected by this rename.  Clients that were LISTENing to the old address on the server should continue receiving values sent to the new address on the server.
 	* Servers that are streaming values because a client made a LISTEN request are responsible for updating any local records they maintain with the new address of any OSC methods that might be affected by this rename.  Any clients that were receiving values from the old address will be reconfigured to receive values sent to the new address.
 * **PATH_REMOVED**    If the client receives a websocket message with "PATH_REMOVED" as the provided "COMMAND", the server is indicating that a method in the OSC address space has been deleted.  The value stored with "DATA" is a string describing the OSC method that has been removed from the server's address space.
-* **PATH_ADDED**    If the client receives a websocket message with "PATH_ADDED" as the provided "COMMAND", the server is indicating that a method in the OSC address space has been deleted.  The value stored with "DATA" is a string describing the OSC method that has been added to the server's address space.
+* **PATH_ADDED**    If the client receives a websocket message with "PATH_ADDED" as the provided "COMMAND", the server is indicating that a method in the OSC address space has been created.  The value stored with "DATA" is a string describing the OSC method that has been added to the server's address space.
 
 ## Examples
 
