@@ -37,7 +37,7 @@ Those quantities being multi-dimensional, their members' units can and must (acc
 ## An example:
 A Spherical position could be described this way in a OSCQuery JSON:
 
-``
+```
 "position" : {
     "EXTENDED_TYPE" : "position.spherical",
     "FULL_PATH" : "\/some\/position",
@@ -73,7 +73,7 @@ A Spherical position could be described this way in a OSCQuery JSON:
       ]
     ]
 },
-``
+```
 
 NB: this list has been specified as part of the [Jamoma project's Dataspace Lib](https://github.com/jamoma/JamomaCore/tree/master/Foundation/extensions/DataspaceLib), which has been used as specifications for [libossia unit management](https://github.com/OSSIA/libossia/tree/master/OSSIA/ossia/network/dataspace) - also see units.md
 
