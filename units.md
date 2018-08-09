@@ -84,7 +84,7 @@ Those quantities being multi-dimensional, their members' units can and must (acc
 ## An example:
 A Spherical position could be described this way in a OSCQuery JSON:
 
-``
+```
 "position" : {
     "EXTENDED_TYPE" : "vecf",
     "FULL_PATH" : "\/some\/position",
@@ -114,7 +114,7 @@ A Spherical position could be described this way in a OSCQuery JSON:
        56
     ]
 },
-``
+```
 
 
 
