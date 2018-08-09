@@ -12,7 +12,7 @@ Those quantities being multi-dimensional, their members' units can and must (acc
 - position.cart2D {x:distance, y:distance}
 - position.polar {a:angle, d:distance} 
 - position.cart3D {x:distance, y:distance, z:distance}
-- position.spherical {a:angle, e:distance, d:distance} 
+- position.spherical {a:angle, e:angle, d:distance} 
 - position.cylindrical {d:distance, a:angle, z:distance}
 - position.openGL {x:distance, y:distance, z:distance} (inverted Z and Y axis, compared to cart3D)
 
