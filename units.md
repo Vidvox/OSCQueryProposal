@@ -51,6 +51,3 @@ When the meaning of the **UNIT** is not straightforward, it is explained in pare
 
 
 
-NB: this list has been specified as part of the [Jamoma project's Dataspace Lib](https://github.com/jamoma/JamomaCore/tree/master/Foundation/extensions/DataspaceLib), which has been used as specifications for [libossia unit management](https://github.com/OSSIA/libossia/tree/master/OSSIA/ossia/network/dataspace) - also see vectors.md
-
-

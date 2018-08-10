@@ -8,6 +8,9 @@ Here is a proposed list of such types, which can be documented using the EXTENDE
 
 - filepath: string describing a UNC or POSIX file path
 
+## T, F, int (with RANGE [0, 1])
+
+- bool
 
 ## ff, fff, ffff or ii, iii, iiii, aka:
 
@@ -19,7 +22,9 @@ Similarly (and complementary) to **UNIT**s for scalars (aka single-dimension qua
 We propose to use the EXTENDED_TYPE field for documenting those.
 
 
-Also, rhose quantities being multi-dimensional, their members' units can and must (according to the OSCQuery specs) be declared individually. In the list below, the elements between curly brackets indicate pairs of each member's (informative) name, and the  **UNIT** category to which it belongs .
+Also, rhose quantities being multi-dimensional, their members' units can and must (according to the OSCQuery specs) be declared individually. In the list below, the elements between curly brackets indicate pairs of:
+- each member's name (to be appended to the multi-dimensionnal EXTENDED_TYPE), e.g. ```position.cart2D``` 
+- the **UNIT** category to which it belongs .
 
 
 
@@ -54,7 +59,11 @@ A Spherical position could be described this way in a OSCQuery JSON:
 
 ```
 "position" : {
-    "EXTENDED_TYPE" : "position.spherical",
+    "EXTENDED_TYPE" : [
+         "position.spherical.a",
+         "position.spherical.e",
+         "position.spherical.d",
+    ]
     "FULL_PATH" : "\/some\/position",
     "RANGE" : [
          {
@@ -63,26 +72,26 @@ A Spherical position could be described this way in a OSCQuery JSON:
          },
          {
            "MAX" : 0,
-           "MIN" : 50
+           "MIN" : 360
          },
          {
            "MAX" : 0,
-           "MIN" : 100
+           "MIN" : 500
          }
     ],
     "TYPE" : "fff",
     "UNIT" : [
         "angle.degree",
-        "distance.m",
+        "angle.degree",
         "distance.m"
      ]
     "VALUE" : [
        123,
        12,
-       56
+       31
     ]
 },
 ```
 
-NB: this list has been specified as part of the [Jamoma project's Dataspace Lib](https://github.com/jamoma/JamomaCore/tree/master/Foundation/extensions/DataspaceLib), which has been used as specifications for [libossia unit management](https://github.com/OSSIA/libossia/tree/master/OSSIA/ossia/network/dataspace) - also see units.md
+
 
