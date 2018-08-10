@@ -1,12 +1,10 @@
 
 # Here is a list of recommended values for the UNIT field:
 
-It is composed of several categories, containing mututally convertible sets of units.
-Those categories are grouped into two groups, for unidimensional (scalar) and multidimensional (vector) quantities.
+It is composed of several categories, containing mututally convertible sets of **UNIT**s.
 
-When the meaning of the unit is not straightforward, it is explained in parentheses, with an optional recommended implementation guideline.
+When the meaning of the **UNIT** is not straightforward, it is explained in parentheses, with an optional recommended implementation guideline.
 
-# Uni-dimensional units:
 
 ## Distance:
 - distance.m 
@@ -51,73 +49,8 @@ When the meaning of the unit is not straightforward, it is explained in parenthe
 - speed.ft/s
 - speed.ft/h
 
-# Multi-dimensional units:
-
-Those quantities being multi-dimensional, their members' units can and must (according to the OSCQuery specs) be declared individually. The elements between curly brackets indicate the suffix to append to the multi-dimensional for each of its elements, and the type of uni-dimensional unit to (optionally) specify. See example below.
 
 
-## Position:
-- position.cart3D{x:distance,y:distance,z:distance}
-- position.cart2D{x:distance,y:distance}
-- position.spherical{a:angle,e:distance,d:distance} 
-- position.polar
-- position.openGL
-- position.cylindrical
-
-## orientation:
-- orientation.quaternion
-- orientation.euler
-- orientation.axis
-
-## Color:
-- color.rgba8 (8-bit RGBA color, corresponding to the OSC "r" type)
-- color.rgba (4-float vector for RGBA)
-- color.rgb
-- color.bgr
-- color.argb
-- color.argb8
-- color.hsv
-- color.cmy8
-- color.xyz
-
-
-## An example:
-A Spherical position could be described this way in a OSCQuery JSON:
-
-```
-"position" : {
-    "EXTENDED_TYPE" : "vecf",
-    "FULL_PATH" : "\/some\/position",
-    "RANGE" : [
-      {
-        "MAX" : 0,
-        "MIN" : 360
-      },
-      {
-        "MAX" : 0,
-        "MIN" : 50
-      },
-      {
-        "MAX" : 0,
-        "MIN" : 100
-      }
-    ],
-    "TYPE" : "fff",
-    "UNIT" : [
-    "position.spherical.a:degree",
-    "position.spherical.e:m",
-    "position.spherical.d:ms"
-    ],
-    "VALUE" : [
-      123,
-       12,
-       56
-    ]
-},
-```
-
-
-
-NB: this list has been specified as part of the [Jamoma project's Dataspace Lib](https://github.com/jamoma/JamomaCore/tree/master/Foundation/extensions/DataspaceLib), which has been used as specifications for [libossia unit management](https://github.com/OSSIA/libossia/tree/master/OSSIA/ossia/network/dataspace)
+NB: this list has been specified as part of the [Jamoma project's Dataspace Lib](https://github.com/jamoma/JamomaCore/tree/master/Foundation/extensions/DataspaceLib), which has been used as specifications for [libossia unit management](https://github.com/OSSIA/libossia/tree/master/OSSIA/ossia/network/dataspace) - also see vectors.md
 
 

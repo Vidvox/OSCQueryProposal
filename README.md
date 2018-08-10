@@ -86,31 +86,46 @@ When the HTTP server receives a request for a URL, it returns a JSON object desc
 
 ## Optional Attributes
 
-In addition to the required attributes above, this protocol defines a set of optional attributes which describe further properties of the OSC method to aid in determining how to best interact with it.  Support for these attributes is not mandatory- but you should strive to provide as much of this information as possible in your server implementation.  Your server can indicate support for these optional attributes on a case-by-case basis by including them in the EXTENSIONS object returned by a HOST_INFO query.
+In addition to the required attributes above, this protocol defines a set of optional attributes which describe further properties of the OSC method to aid in determining how to best interact with it.  Support for these attributes is not mandatory- but you should strive to provide as much of this information as possible in your server implementation.  Your server indicates its support for these optional attributes on a case-by-case basis by including them in the EXTENSIONS object returned by a HOST_INFO query.
 
 If an optional attribute is supported by a server, but that attribute is not returned in a JSON object returned by the server, the client should behave as if the attribute is not relevant to the OSC method described by that JSON object.
 
-The object stored with many of the optional attributes is an array, and these arrays typically contain one element for each value the OSC method expects (one RANGE per value, one UNIT per value, etc).  If all of the elements of an optional attribute share the same value, it's acceptable to only list a single element (which clients will assume corresponds to all of the values associated with the method).
+Some optional attributes need to include values that correspond directly to OSC values and OSC data types.  The following table lists JSON equivalents to OSC data types:
+
+| OSC Type Tag | JSON equivalent |
+| --- | --- |
+| i, f, h, d, t | JSON number |
+| s, S, c | JSON string |
+| r <img width=300/> | JSON string containing hex color notation for an RGBA color (four pairs of hexadecimal values), preceded by a hashtag/pound sign.  Opaque white is "#FFFFFFFF", opaque red is "#FF0000FF", transparent blue is "#0000FF00", etc. |
+| [, ] | JSON array |
+| b, m | JSON nil.  OSC blobs and MIDI-type OSC values don't have the sort of defined types that allows OSCQuery to publish VALUE or RANGE information about them, so use a JSON "nil" as a placeholder where necessary. |
+| T, F, N, I | JSON nil.  These types are values without having a value- they don't have or need a JSON value, so use a JSON "nil" as a placeholder where necessary. |
 
 * **ACCESS**    The value stored with this string is an integer that represents a binary mask.  Returns 0 if there is no value associated with this OSC destination, 1 if the value may only be retrieved, 2 if the value may only be set, or 3 if the value may be both retrieved and set.
 	* If the value returned by ACCESS indicates that the method's value may be retrieved, but the "VALUE" attribute is not supported, any queries for the VALUE attribute should return a 204 (no content/inappropriate request).
 	* If the value returned by ACCESS may not be retrieved, but the "VALUE" attribute is supported, any queries for the VALUE attribute should return a 204 (no content/inappropriate request).
 	* If the ACCESS attribute is not supported, or it is supported but a value is not returned for it, then the assumption should be that the value is always writable, and also readable if the "VALUE" attribute is supported.
-* **VALUE**    The value stored with this string is always an array- this array contains one or more values (the number and type of values is described by the "TYPE" attribute).  The values returned should be JSON representations of the corresponding OSC value types (if there's no corresponding JSON type- as is the case with the OSC type "infinity", for example- then a JSON "null" may be returned for that value).
+* **VALUE**    The value stored with this string is always an array that should contain one JSON item for each of the types described in the "TYPES" attribute (the structure of this array is described in greater detail in ["Other notes on attributes"](#other-notes-on-attributes)).  Each item in the array should be a JSON representation of the corresponding OSC value type (a table is provided above with JSON equivalents for OSC data types).
 	* If a query is performed for the "VALUE" attribute, but the "ACCESS" attribute indicates that the OSC method isn't readable, the query should return a 204 (no content/inappropriate request).
 	* If a query is performed for the "VALUE" attribute, but the OSC method does not yet have a value, the query should return an empty JSON object.
-* **RANGE**    The value stored at this string is an array that should contain one JSON object for each of the types described in the "TYPES" attribute.  Each JSON object in the array describes the range of the corresponding value from "TYPES", using one or more of the following keys:
+* **RANGE**    The value stored at this string is an array that should contain one JSON object for each of the types described in the "TYPES" attribute (the structure of this array is described in greater detail in ["Other notes on attributes"](#other-notes-on-attributes)).  Each JSON object in the array describes the range of the corresponding value from "TYPES", using one or more of the following keys:
     * If the JSON object in the "RANGE" array has a value for the key "**MIN**", the accompanying value is the minimum expected value.  If no object is specified for the "MIN" key then the host hasn't supplied a minimum value.
     * If the JSON object in the "RANGE" array has a value for the key "**MAX**", the accompanying value is the maximum expected value.  If no object is specified for the "MAX" key then the host hasn't supplised a maximum value.
     * If the JSON object in the "RANGE" array has a value for the key "**VALS**", the accompanying value is an array listing the only acceptable values to send to the method.  This is typically used to describe a series of menu options in a pop-up button, but can also be applied to numeric values.
 * **DESCRIPTION**    The value stored with this string is a string containing a human-readable description of this container/method.
 * **TAGS**    The value stored at this string is an array of strings describing the OSC node- these tags are intended to serve an identifying role, making it possible to search or filter OSC nodes.
 * **EXTENDED_TYPE**    If provided, the value stored with this string is always an array- this array contains one string per value returned (or expected) by this OSC method (this attribute provides meaningful semantic information about the expected values, so there needs to be one extended type for each value).  The string should describe what the value means/what the value is/what the value does, and should be as brief as possible (ideally only a single word).  For example, if your address space has a method that accepts a filepath as a string, you could set the "EXTENDED_TYPE" to "filepath", and other software that inspects this could provide a file picker UI instead of just a blank text field.
-* **UNIT**    If provided, the value stored with this string is always an array- this array contains one string per value returned (or expected) by this OSC method (this attribute is supposed to describe the unit of the expected values, so there needs to be one unit per value).  The string should describe the units of the value, from a list of commonly-accepted values [currently being assembled here](units.txt).
+* **UNIT**    If provided, the value stored with this string is an array- this array contains one string per value returned (or expected) by this OSC method (this attribute is supposed to describe the unit of the expected values, so there needs to be one unit per value).  The string should describe the units of the value, from a list of commonly-accepted values [currently being assembled here](units.txt).
 * **CRITICAL**    If provided, the value stored with this string is expected to be a boolean value (true/false) used to indicate that the messages sent to this address are of particular importance, and their delivery needs to be guaranteed.  If both the host and client support it (this attribute is optional), they should use a TCP connection of some sort to guarantee delivery of the message.  The "streaming" portion of this protocol describes a simple way of passing binary OSC packets over a (TCP) websocket connection, which would make this very easy.
-* **CLIPMODE**    If provided, the value stored with this string is always an array- this array contains one string per value returned (or expected) by this OSC method (this attribute is supposed to describe the clipping mode of expected values, so there needs to be a description of the mode for each value).  The string should be either "none", "low", "high", or "both".  The CLIPMODE attribute acts as a "hint" to how the OSC method handles values outside the indicated RANGE- "none" indicates that no clipping is performed/the OSC method will try to use any value you send it, "low" indicates that values below the min range will be clipped to the min range, "high" indicates that values above the max range will be clipped to the max range, and "both" is self-explanatory.  This attribute is optional, and if it doesn't exist, software that expects it should assume that no clipping will be performed.
+* **CLIPMODE**    If provided, the value stored with this string is an array- this array contains one string per value returned (or expected) by this OSC method (this attribute is supposed to describe the clipping mode of expected values, so there needs to be a description of the mode for each value).  The string should be either "none", "low", "high", or "both".  The CLIPMODE attribute acts as a "hint" to how the OSC method handles values outside the indicated RANGE- "none" indicates that no clipping is performed/the OSC method will try to use any value you send it, "low" indicates that values below the min range will be clipped to the min range, "high" indicates that values above the max range will be clipped to the max range, and "both" is self-explanatory.  This attribute is optional, and if it doesn't exist, software that expects it should assume that no clipping will be performed.
 * **OVERLOADS**    The goal of this attribute is to communicate to clients that this OSC method can respond to OSC messages with type tag strings that differ from the value associated with the TYPE attribute.  If provided, the value stored with this string is always an array- the array contains JSON objects, each of which describes this OSC method with a different OSC type tag string.  These JSON objects should not contain any values for the CONTENTS key- but aside from that exception these JSON objects can use all of the other attributes in this spec.
 * **HTML**    This attribute will never be provided by the server- instead, the presence of this attribute in a query indicates that the client is requesting an HTML resource.  The server should try to find a local resource corresponding to the resource path in the requested URL, and return it instead of a JSON object.  For example, this attribute could be used to provide an HTML page and assorted accompanying media that renders either a simple, nicely-formatted description of an OSC node.
+
+### Other notes on attributes
+* Many of the optional attributes (**VALUE**, **RANGE**, **EXTENDED_TYPE**, **UNIT**, and **CLIPMODE**) convey information about the individual values an OSC method expects to receive- the JSON object stored with each of these attributes is a JSON array that contains one item per OSC type in the OSC method's type tag string (the "TYPE" attribute).
+	* If the OSC method's type tag string includes an explicit array designator using the "[" and "]" characters, this should be reflected in the JSON array by inserting another JSON array to match the basic structure of the OSC method's type tag string.
+	*  If all of the elements of one of these optional attribute share the same value, it's acceptable to only list a single value (which clients will assume corresponds to all of the elements) for the sake of brevity.
+	* Examples are provided at the end for clarity.
 
 ## Optional Bi-Directional Communication
 
@@ -120,7 +135,7 @@ Bi-directional communication between a server and each of its clients is an opti
 * Once the websocket connection has been established, the client and server communicate with one another by sending websocket messages using the "text" opcode.  The messages are always JSON objects that must contain the following key:value pairs
 	* **COMMAND**    The value stored with this key will always be a string describing the command you want the message to perform.  There are only a couple predefined COMMANDs, which will be discussed shortly.
 	* **DATA**    The value stored with this key will depend on the specific COMMAND it accompanies, and is defined on an individual basis later.
-* In addition to sending JSON objects, raw OSC packets are also sent over the websocket connection using the "binary" opcode- the format of these packets is identical to the format of OSC packets sent over the network.
+* In addition to sending JSON objects, raw OSC packets are also sent over the websocket connection using the "binary" opcode of the websocket protocol- the format of these packets is identical to the format of OSC packets sent over the network.  This allows values to be streamed between the server and its clients, and also makes it substantially easier to build browser-based client apps.
 
 ### Client -> Server Communication Attributes
 
@@ -338,5 +353,95 @@ Bi-directional communication between a server and each of its clients is an opti
 	{
 		"COMMAND": "IGNORE",
 		"DATA": "/baz"
+	}
+	~~~
+
+* These are some examples of JSON objects that illustrate various features or edge cases of the spec:
+	* These examples illustrate how the structure of the VALUE, RANGE, and UNIT attributes all directly reflect the structure of its TYPE attribute.  EXTENDED_TYPE and CLIPMODE have the same structure, but aren't demonstrated here because that would be needlessly redundant.
+	~~~json
+	{
+		"TYPE": "ff",
+		"VALUE": [
+			1.23,
+			456.78
+		],
+		"RANGE": [
+			{	"MIN": 0.0, "MAX": 10.0		},
+			{	"MIN": 0.0, "MAX": 987.0	}
+		],
+		"UNIT": [
+			"distance.miles",
+			"distance.m"
+		]
+	}
+	~~~
+	~~~json
+	{
+		"TYPE": "i[ff]i",
+		"VALUE": [
+			100,
+			[
+				1.0,
+				1.0
+			],
+			100
+		],
+		"RANGE": [
+			{	"MIN": 0, "MAX": 100	},
+			[
+				{	"MIN": 0.0, "MAX": 1.0	},
+				{	"MIN": 0.0, "MAX": 1.0	}
+			],
+			{	"MIN": 0, "MAX": 100	}
+		],
+		"UNIT": [
+			"distance.mm",
+			[
+				"distance.miles",
+				"distance.miles"
+			],
+			"distance.mm"
+		],
+	}
+	~~~
+	* This example demonstrates the use of OVERLOADS to specify additional type tag strings the OSC method will respond to.  The default OSC method requires an OSC color, but OVERLOADS allows it to accept a message with four ints, and also a message with four floats for higher-accuracy colors.  This example also illustrates the use of the hex notation for RGBA colors- the color "#FA6432FF" is (250, 100, 50, 255), or (0.980392156862745, 0.392156862745098, 0.196078431372549, 1.0).
+	~~~json
+	{
+		"TYPE": "r",
+		"VALUE": [
+			"#FA6432FF"
+		],
+		"OVERLOADS": [
+			{
+				"TYPE": "ffff",
+				"VALUE": [
+					0.980392156862745,
+					0.392156862745098,
+					0.196078431372549,
+					1.0
+				],
+				"RANGE": [
+					{	"MIN": 0.0, "MAX": 1.0	},
+					{	"MIN": 0.0, "MAX": 1.0	},
+					{	"MIN": 0.0, "MAX": 1.0	},
+					{	"MIN": 0.0, "MAX": 1.0	},
+				]
+			},
+			{
+				"TYPE": "iiii",
+				"VALUE": [
+					250,
+					100,
+					50,
+					255
+				],
+				"RANGE": [
+					{	"MIN": 0, "MAX": 255	},
+					{	"MIN": 0, "MAX": 255	},
+					{	"MIN": 0, "MAX": 255	},
+					{	"MIN": 0, "MAX": 255	},
+				]
+			}
+		]
 	}
 	~~~
