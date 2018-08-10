@@ -57,7 +57,6 @@ A Spherical position could be described this way in a OSCQuery JSON:
     "EXTENDED_TYPE" : "position.spherical",
     "FULL_PATH" : "\/some\/position",
     "RANGE" : [
-       [
          {
            "MAX" : 0,
            "MIN" : 360
@@ -70,22 +69,17 @@ A Spherical position could be described this way in a OSCQuery JSON:
            "MAX" : 0,
            "MIN" : 100
          }
-       ]
     ],
-    "TYPE" : "[fff]",
+    "TYPE" : "fff",
     "UNIT" : [
-       [
         "angle.degree",
         "distance.m",
         "distance.m"
-       ],
      ]
     "VALUE" : [
-      [
        123,
        12,
        56
-      ]
     ]
 },
 ```
