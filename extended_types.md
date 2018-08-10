@@ -1,10 +1,25 @@
-# Multi-dimensional quantities (vectors):
+# EXTENDED_TYPEs
 
+Some values' types sometimes need to be further described than what the OSC typetags allow for.
+
+Here is a proposed list of such types, which can be documented using the EXTENDED_TYPE field, sorted byt their corresponding OSC type tags :
+
+## s
+
+- filepath: string describing a UNC or POSIX file path
+
+
+## ff, fff, ffff or ii, iii, iiii, aka:
+
+# Multi-dimensional quantities (vectors)  
 
 Similarly (and complementary) to **UNIT**s for scalars (aka single-dimension quantities), vectors (aka multi-dimensional quantities) can be classified into sets of mututally convertible values.
 
 
-Those quantities being multi-dimensional, their members' units can and must (according to the OSCQuery specs) be declared individually. The elements between curly brackets indicate pairs of each member's name, and the  **UNIT** category to which it belongs .
+We propose to use the EXTENDED_TYPE field for documenting those.
+
+
+Also, rhose quantities being multi-dimensional, their members' units can and must (according to the OSCQuery specs) be declared individually. In the list below, the elements between curly brackets indicate pairs of each member's (informative) name, and the  **UNIT** category to which it belongs .
 
 
 
