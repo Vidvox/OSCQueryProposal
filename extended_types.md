@@ -2,17 +2,38 @@
 
 Some values' types sometimes need to be further described than what the OSC typetags allow for.
 
-Here is a proposed list of such types, which can be documented using the EXTENDED_TYPE field, sorted byt their corresponding OSC type tags :
+Here is a proposed list of such types, which can be documented using the EXTENDED_TYPE field, sorted by their corresponding OSC type tags :
 
 ## s
 
 - filepath: string describing a UNC or POSIX file path
+- url: string representing an URL or URI
 
 ## T, F, int (with RANGE [0, 1])
 
 - bool
 
+## arbitrary list of various types:
+
+-list 
+
+## arbitrary arrays of strings:
+
+- stringArray
+
+## arbitrary arrays of floats:
+
+- floatArray
+
+## arbitrary arrays of ints:
+
+- integerArray
+
+of which, some like
+
 ## ff, fff, ffff or ii, iii, iiii, aka:
+
+can describe multi-dimensional quantities, which we will discuss in the section below:
 
 # Multi-dimensional quantities (vectors)  
 
