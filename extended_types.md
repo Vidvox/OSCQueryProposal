@@ -1,8 +1,41 @@
 # EXTENDED_TYPE
 
-Following are some accepted values for the EXTENDED_TYPE attribute.
-- Characters inside brackets enumerate the various possible value- for example, `position.cart2D.[xy]` means that you can use both `position.cart2D.x` and `position.cart2D.y`.
-- Not all of these attributes are required to be used- for example, `color.rgb.[rgba]` potentially includes an alpha channel- but if you're describing a color that doesn't have an alpha channel, you can simply omit it when describing the OSC method in your server, and work with `color.rgb.r`, `color.rgb.g`, and `color.rgb.b`.
+Following are some accepted values for the EXTENDED_TYPE attribute, which all use the same notation:
+- Characters inside brackets enumerate the various possible values- for example, `position.cart.[xyz]` means that you can use `position.cart.x`, `position.cart.y`, and `position.cart.z`.
+~~~json
+"position": {
+	"FULL_PATH": "/position",
+	"TYPE": "fff",
+	"EXTENDED_TYPE": [
+		"position.cart.x",
+		"position.cart.y",
+		"position.cart.z",
+	],
+}
+~~~
+- Not all of these attributes are required to be used- for example, `position.cart.[xyz]` potentially includes `position.cart.x`, `position.cart.y`, and `position.cart.z`, but you don't need to use all of these at the same time.  The following examples are all correct:
+~~~json
+"2d_position": {
+	"FULL_PATH": "/2d_position",
+	"TYPE": "ff",
+	"EXTENDED_TYPE": [
+		"position.cart.x",
+		"position.cart.y",
+	],
+}
+~~~
+~~~json
+"x": {
+	"FULL_PATH": "/pos/x",
+	"TYPE": "i",
+	"EXTENDED_TYPE": [ "position.cart.x" ]
+},
+"funky_2D": {
+	"FULL_PATH": "/pos/funky_2D",
+	"TYPE": "ff",
+	"EXTENDED_TYPE": [ "position.cart.z", "position.cart.y" ]
+}
+~~~
 
 ## URLs
 
@@ -11,18 +44,13 @@ Following are some accepted values for the EXTENDED_TYPE attribute.
 
 ## Position
 
-- `position.cart2D.[xy]`- A cartesian (2D) point, consisting of x and y components
-  - `x`- A number value describing a distance.
-  - `y`- A number value describing a distance.
-
-- `position.cart3D.[xyz]`- A point in 3D space, consisting of x, y, and z components.
+- `position.cart.[xyz]`- A cartesian point, consisting of any combination of x, y, and z components.
   - `x`- A number value describing a distance.
   - `y`- A number value describing a distance.
   - `z`- A number value describing a distance.
-
-- `position.polar.[da]`- A point in 2D space described using polar coordinates
-  - `d`- A number value describing a distance.
-  - `a`- A number value describing an angle.
+- `position.polar.[rp]`- A point in 2D space described using polar coordinates
+  - `r`- A number value describing the radial distance.
+  - `p`- A number value describing the azimuth angle.
 - `position.spherical.[rtp]`- A point in 3D space described using spherical coordinates in the form suggested by ISO 80000-2:2009/ISO 31-11.
   - `r`- A number value describing the radial distance.
   - `t`- A number value describing the inclination angle.
@@ -56,7 +84,7 @@ Following are some accepted values for the EXTENDED_TYPE attribute.
   - `g`- A number describing the green channel value.
   - `b`- A number describing the blue channel value.
   - `a`- A number describing the alpha channel value.
-- `color.hsv.[hsva]`- A color value described in the HSV color space, potentially including an alpha channel,
+- `color.hsv.[hsva]`- A color value described in the HSV color space, potentially including an alpha channel.
   - `h`- A number describing the hue value.
   - `s`- A number describing the saturation value.
   - `v`- A number describing the "value" value (not a typo).
