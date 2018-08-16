@@ -115,8 +115,8 @@ Some optional attributes need to include values that correspond directly to OSC 
     * If the JSON object in the "RANGE" array has a value for the key "**VALS**", the accompanying value is an array listing the only acceptable values to send to the method.  This is typically used to describe a series of menu options in a pop-up button, but can also be applied to numeric values.
 * **DESCRIPTION**    The value stored with this string is a string containing a human-readable description of this container/method.
 * **TAGS**    The value stored at this string is an array of strings describing the OSC node- these tags are intended to serve an identifying role, making it possible to search or filter OSC nodes.
-* **EXTENDED_TYPE**    If provided, the value stored with this string is always an array- this array contains one string per value returned (or expected) by this OSC method (this attribute provides meaningful semantic information about the expected values, so there needs to be one extended type for each value).  The string should describe what the value means/what the value is/what the value does, and should be as brief as possible (ideally only a single word).  For example, if your address space has a method that accepts a filepath as a string, you could set the "EXTENDED_TYPE" to "filepath", and other software that inspects this could provide a file picker UI instead of just a blank text field.
-* **UNIT**    If provided, the value stored with this string is an array- this array contains one string per value returned (or expected) by this OSC method (this attribute is supposed to describe the unit of the expected values, so there needs to be one unit per value).  The string should describe the units of the value, from a list of commonly-accepted values [currently being assembled here](units.txt).
+* **EXTENDED_TYPE**    If provided, the value stored with this string is always an array- this array contains one string per value returned (or expected) by this OSC method (this attribute provides meaningful semantic information about the expected values, so there needs to be one extended type for each value).  The string should describe what the value means/what the value is/what the value does, and should be as brief as possible (ideally only a single word), and whenever possible drawn from the list [currently being assembled here](extended_types.md).
+* **UNIT**    If provided, the value stored with this string is an array- this array contains one string per value returned (or expected) by this OSC method (this attribute is supposed to describe the unit of the expected values, so there needs to be one unit per value).  The string should describe the units of the value, from a list of commonly-accepted values [available here](units.md).
 * **CRITICAL**    If provided, the value stored with this string is expected to be a boolean value (true/false) used to indicate that the messages sent to this address are of particular importance, and their delivery needs to be guaranteed.  If both the host and client support it (this attribute is optional), they should use a TCP connection of some sort to guarantee delivery of the message.  The "streaming" portion of this protocol describes a simple way of passing binary OSC packets over a (TCP) websocket connection, which would make this very easy.
 * **CLIPMODE**    If provided, the value stored with this string is an array- this array contains one string per value returned (or expected) by this OSC method (this attribute is supposed to describe the clipping mode of expected values, so there needs to be a description of the mode for each value).  The string should be either "none", "low", "high", or "both".  The CLIPMODE attribute acts as a "hint" to how the OSC method handles values outside the indicated RANGE- "none" indicates that no clipping is performed/the OSC method will try to use any value you send it, "low" indicates that values below the min range will be clipped to the min range, "high" indicates that values above the max range will be clipped to the max range, and "both" is self-explanatory.  This attribute is optional, and if it doesn't exist, software that expects it should assume that no clipping will be performed.
 * **OVERLOADS**    The goal of this attribute is to communicate to clients that this OSC method can respond to OSC messages with type tag strings that differ from the value associated with the TYPE attribute.  If provided, the value stored with this string is always an array- the array contains JSON objects, each of which describes this OSC method with a different OSC type tag string.  These JSON objects should not contain any values for the CONTENTS key- but aside from that exception these JSON objects can use all of the other attributes in this spec.
@@ -443,7 +443,7 @@ Bi-directional communication between a server and each of its clients is an opti
 		],
 	}
 	~~~
-	* This example demonstrates the use of OVERLOADS to specify additional type tag strings the OSC method will respond to.  The default OSC method requires an OSC color, but OVERLOADS allows it to accept a message with four ints, and also a message with four floats for higher-accuracy colors.  This example also illustrates the use of the hex notation for RGBA colors- the color "#FA6432FF" is (250, 100, 50, 255), or (0.980392156862745, 0.392156862745098, 0.196078431372549, 1.0).
+	* This example demonstrates the use of OVERLOADS and EXTENDED_TYPE to specify additional type tag strings the OSC method will respond to, and provide additional information about the nature and format of the data expected in those type tag strings.  The default OSC method requires an OSC color, but OVERLOADS allows it to accept a message with four ints, and also a message with four floats for higher-accuracy colors.  This example also illustrates the use of the hex notation for RGBA colors- the color "#FA6432FF" is (250, 100, 50, 255), or (0.980392156862745, 0.392156862745098, 0.196078431372549, 1.0).
 	~~~json
 	{
 		"TYPE": "r",
@@ -463,7 +463,13 @@ Bi-directional communication between a server and each of its clients is an opti
 					{	"MIN": 0.0, "MAX": 1.0	},
 					{	"MIN": 0.0, "MAX": 1.0	},
 					{	"MIN": 0.0, "MAX": 1.0	},
-					{	"MIN": 0.0, "MAX": 1.0	},
+					{	"MIN": 0.0, "MAX": 1.0	}
+				],
+				"EXTENDED_TYPE": [
+					"color.rgba.r",
+					"color.rgba.g",
+					"color.rgba.b",
+					"color.rgba.a"
 				]
 			},
 			{
@@ -479,8 +485,41 @@ Bi-directional communication between a server and each of its clients is an opti
 					{	"MIN": 0, "MAX": 255	},
 					{	"MIN": 0, "MAX": 255	},
 					{	"MIN": 0, "MAX": 255	},
+				],
+				"EXTENDED_TYPE": [
+					"color.rgba.r",
+					"color.rgba.g",
+					"color.rgba.b",
+					"color.rgba.a"
 				]
 			}
+		]
+	}
+	~~~
+	* This example demonstrates the use of EXTENDED_TYPE to provide contextual information about a position in 3d space
+	~~~json
+	{
+		"EXTENDED_TYPE": [
+			"position.spherical.r",
+			"position.spherical.t",
+			"position.spherical.p",
+		],
+		"FULL_PATH": "/some/position",
+		"RANGE": [
+			{	"MIN": 0,	"MAX": 360 },
+			{	"MIN": 0,	"MAX": 360 },
+			{	"MIN": 0,	"MAX": 500 }
+		],
+		"TYPE": "fff",
+		"UNIT": [
+			"distance.m",
+			"angle.degree",
+			"angle.degree"
+		],
+		"VALUE" : [
+			31,
+			123,
+			12
 		]
 	}
 	~~~
