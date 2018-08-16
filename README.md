@@ -74,7 +74,7 @@ When the HTTP server receives a request for a URL, it returns a JSON object desc
 
 * **FULL_PATH**    The value stored with this string is the full OSC address path of the OSC node described by this object.  Every OSC method is required to return a non-null value for this attribute.
 * **CONTENTS**    The value stored with this string is a JSON object containing string:value pairs.  The strings correspond to the names of sub-nodes, and the values stored with them are JSON objects that describe the sub-nodes.  If the "CONTENTS" attribute is used, a single JSON object can be used to fully describe the attributes and hierarchy of every OSC method and container in an address space.  This attribute will only be used within a JSON object that describes an OSC container.  If this string:value pair is missing, the corresponding node should be assumed to be an OSC method (rather than a container).
-* **TYPE**    The value stored with this string is a string- this is the OSC type tag string used by the OSC node at this address.  The number of elements returned in the "VALUE", "RANGE", and "UNIT" attribute arrays- as well as their type- is determined by this string.  Likewise, any OSC messages sent to this method should send data of the type and quantity described in this type tag string.  It is presumed that an OSC method will only have a single type of value (an OSC method with the declared type "f" should not be expected to respond to OSC messages with integer values).  If an OSC method doesn't have a value and doesn't require a value to be sent to it (usually an indicator that this node is purely a container), this attribute may be omitted from the returned object.
+* **TYPE**    The value stored with this string is a string- this is the OSC type tag string used by the OSC node at this address.  The number of elements returned in the "VALUE", "RANGE", and "UNIT" attribute arrays- as well as their type- is determined by this string.  Likewise, any OSC messages sent to this method should send data of the type and quantity described in this type tag string.  It is presumed that an OSC method will only have a single type tag string (an OSC method with the declared type "f" should not be expected to respond to OSC messages with integer values- the only exception being T and F, which are used interchangeably).  If an OSC method doesn't have a value and doesn't require a value to be sent to it (usually an indicator that this node is purely a container), this attribute may be omitted from the returned object.
 * **HOST_INFO**    This attribute will never be provided by the server by default- it will only be provided if the client software explicitly queries this attribute.  If this attribute is queried, the JSON object that is returned will *only* consist of this object- the path in the URL is functionally irrelevant.  The value returned will always be a JSON object, with zero or more of the following keys:
     * **NAME**    The value stored with this key is a human-readable string describing the name of the host.  OSC query servers are not required to provide this value- it may be omitted.
     * **EXTENSIONS**    The value stored with this string is a JSON object describing the various optional attributes listed below.  The keys for this object are the various attribute keys, and the values are boolean values indicating whether or not the host supports the attribute (if an optional attribute is not listed, the client should assume that it isn't supported).
@@ -99,7 +99,8 @@ Some optional attributes need to include values that correspond directly to OSC 
 | r <img width=300/> | JSON string containing hex color notation for an RGBA color (four pairs of hexadecimal values), preceded by a hashtag/pound sign.  Opaque white is "#FFFFFFFF", opaque red is "#FF0000FF", transparent blue is "#0000FF00", etc. |
 | [, ] | JSON array |
 | b, m | JSON nil.  OSC blobs and MIDI-type OSC values don't have the sort of defined types that allows OSCQuery to publish VALUE or RANGE information about them, so use a JSON "nil" as a placeholder where necessary. |
-| T, F, N, I | JSON nil.  These types are values without having a value- they don't have or need a JSON value, so use a JSON "nil" as a placeholder where necessary. |
+| T, F | JSON boolean.  These types are sometimes used interchangeably (it is generally considered appropriate to send an OSC message with the type tag string "F" to an OSC method that declares its type tag string as "T"). |
+| N, I | JSON nil.  These types are values without having a value- they don't have or need a JSON value, so use a JSON "nil" as a placeholder where necessary. |
 
 * **ACCESS**    The value stored with this string is an integer that represents a binary mask.  Returns 0 if there is no value associated with this OSC destination, 1 if the value may only be retrieved, 2 if the value may only be set, or 3 if the value may be both retrieved and set.
 	* If the value returned by ACCESS indicates that the method's value may be retrieved, but the "VALUE" attribute is not supported, any queries for the VALUE attribute should return a 204 (no content/inappropriate request).
@@ -126,6 +127,44 @@ Some optional attributes need to include values that correspond directly to OSC 
 	* If the OSC method's type tag string includes an explicit array designator using the "[" and "]" characters, this should be reflected in the JSON array by inserting another JSON array to match the basic structure of the OSC method's type tag string.
 	*  If all of the elements of one of these optional attribute share the same value, it's acceptable to only list a single value (which clients will assume corresponds to all of the elements) for the sake of brevity.
 	* Examples are provided at the end for clarity.
+
+### Data Types and UI Item conventions
+
+OSC deployments commonly involve the creation of UI items in a client process that will send messages to an OSC server.  Because of this, a number of conventions have emerged over the years to help decide which UI item to display for a given OSC value/data type.  These conventions are listed here, in the hopes that OSC and OSCQuery devs can use these guidelines to help create more consistent UIs.
+
+Basic UI Elements:
+
+- ***Slider/Knob***- A kind of UI item for sweeping across range of UI values
+- ***Momentary Button***- A UI item that sends an event that does not have an accompanying value ("bang" to borrow a term from max)
+- ***Toggle Button***- A UI item that sends an on/off value
+- ***Text Field***- A UI item that allows for text entry, capable of displaying both number values and string/character values
+- ***Color Picker***- A UI item that allows the user to specify a color- this can take any form (RGBA slider, HSL space, etc)
+- ***Pop-Up Menu/Radio Button***- a UI item that presents the user with a number of mutually exclusive options they have to choose between.
+
+Basic UI Element suggestions for OSC Type Tags:
+
+| OSC Type Tag | Data Type | UI Item Suggestions |
+| --- | --- | --- |
+| f,d | Floating-point numbers | Slider/Knob, Text Field |
+| i,h | Integer numbers | Slider/Knob, Text Field, Toggle Button (if limited to 0/1), Pop-Up Menu (if the range isn't too large) |
+| s,S,c | Strings/Alphanumeric chars | Text Field |
+| r | Color | Color Picker |
+| T,F | Boolean value | Toggle Button |
+| N,I | No value (type is value) | Momentary Button |
+| b | Data blob | None |
+| m | MIDI data | None |
+| t | OSC timetag | None |
+
+Existing Conventions:
+
+- OSC methods that accept multiple values can be expressed using a combination of the above basic UI elements.
+- The VALS attribute explicitly lists the acceptable values- if this is being used, you may want to consider using a pop-up menu or radio button to express the available choices, depending on the context.
+- Some apps express integer-type values limited to 0 and 1 (this can be done either via the MIN/MAX or VALS attributes) as toggle buttons.
+- Some apps express OSC methods with the type tag string "T" or "F" as toggle buttons (the T and F types are used interchangeably- it is generally considered reasonable to send an "F" to an OSC method with the type tag string "T").
+- Some apps express integer-type values with a relatively small range as a Pop-Up Menu or Radio Button, depending on the number of possible values (too many values/too many items and this UI item choice becomes unwieldy).
+- Some apps express OSC methods with the type tag string "ff" (two floating-point values) as a single UI item capable of specifying a two-dimensional point input.
+- Some apps use the EXTENDED_TYPE attribute to determine when to show file selectors.
+- Some apps use the UNITS attribute to determine whether or not the slider should behave logarithmically (gain and frequency sliders, for example).
 
 ## Optional Bi-Directional Communication
 
