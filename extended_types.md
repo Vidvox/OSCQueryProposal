@@ -1,5 +1,9 @@
 # EXTENDED_TYPE
 
+Following are some accepted values for the EXTENDED_TYPE. 
+
+Those are intended to provide meaningful semantic information about the expected values.
+
 ## URLs
 
 - `filepath`: string describing a UNC or POSIX file path
