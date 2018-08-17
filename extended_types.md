@@ -79,25 +79,25 @@ The dimensions names used here for polar coordinates are those suggested by ISO 
 - An example of expressing all cartesian position coordinates in one node:
 ~~~json
 "position": {
-	"FULL_PATH": “/color/substractive”,
-	"TYPE": "fffff”,
+	"FULL_PATH": "/color/substractive",
+	"TYPE": "fffff",
 	"EXTENDED_TYPE": [
-		“color.c”,
-		“color.m,
-		“color.y”,
-		“color.k”,
-		“color.a”
+		"color.cmyk.c",
+		"color.cmyk.m",
+		"color.cmyk.y",
+		"color.cmyk.k",
+		"color.cmyk.a"
 	],
 }
 ~~~
-- As mentioned above, not all of these attributes are required to be used in the same OSC node - for example, `position.cart.[xyz]` potentially includes `position.cart.x`, `position.cart.y`, and `position.cart.z`, but you don't need to use all of these at the same time.  The following examples are all correct:
+- As mentioned above, not all of these attributes are required to be used in the same OSC node - for example, `position.cartesian.[xyz]` potentially includes `position.cartesian.x`, `position.cartesian.y`, and `position.cartesian.z`, but you don't need to use all of these at the same time.  The following examples are all correct:
 ~~~json
 "2d_position": {
 	"FULL_PATH": "/2d_position",
 	"TYPE": "ff",
 	"EXTENDED_TYPE": [
-		"position.cart.x",
-		"position.cart.y"
+		"position.cartesian.x",
+		"position.cartesian.y"
 	],
 }
 ~~~
@@ -105,11 +105,11 @@ The dimensions names used here for polar coordinates are those suggested by ISO 
 "x": {
 	"FULL_PATH": "/pos/x",
 	"TYPE": "i",
-	"EXTENDED_TYPE": "position.cart.x"
+	"EXTENDED_TYPE": "position.cartesian.x”
 },
 "funky_2D": {
 	"FULL_PATH": "/pos/funky_2D",
 	"TYPE": "ff",
-	"EXTENDED_TYPE": [ "position.cart.z", "position.cart.y" ]
+	"EXTENDED_TYPE": [ "position.cartesian.z”, "position.cartesian.y" ]
 }
 ~~~
