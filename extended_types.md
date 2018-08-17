@@ -9,7 +9,7 @@
 
 Following are some accepted values for the EXTENDED_TYPE attribute, for multi-dimensional types, which all use the same notation:
 - Characters inside brackets enumerate the various possible values- for example, `position.polar.[rp]` means that you can use `position.polar.r`, and `position.cart.y`.
--  They can be used jointly (for all dimensions) or separately. A few examples are demonstrating this at the end of the document.
+-  Those types can be used jointly (for all dimensions in the same node) or separately (one or several per node). A few examples are demonstrating this at the end of the document.
 
 
 ### Position
@@ -21,14 +21,17 @@ Following are some accepted values for the EXTENDED_TYPE attribute, for multi-di
 - `position.polar.[rp]`- A point in 2D space described using polar coordinates
   - `r`- A number value describing the radial distance.
   - `p`- A number value describing the azimuth angle.
-- `position.spherical.[rtp]`- A point in 3D space described using spherical coordinates in the form suggested by ISO 80000-2:2009/ISO 31-11.
+- `position.spherical.[rtp]`- A point in 3D space described using spherical coordinates.
   - `r`- A number value describing the radial distance.
   - `t`- A number value describing the inclination angle.
   - `p`- A number value describing the azimuth angle.
-- `position.cylindrical.[rpz]`- A point in 3D space described using cylindrical coordinates in the form suggested by ISO 80000-2:2009/ISO 31-11.
+- `position.cylindrical.[rpz]`- A point in 3D space described using cylindrical coordinates in the form suggested 
   - `r`- A number value describing the radial distance.
   - `p`- A number value describing the azimuth angle.
   - `z`- A number value describing the height.
+
+The dimensions names used here for polar coordinates are those suggested by ISO 80000-2:2009/ISO 31-11.
+
 
 ### Orientation
 
@@ -73,7 +76,7 @@ Following are some accepted values for the EXTENDED_TYPE attribute, for multi-di
 
 ### Examples 
 
-- A “canonical usage of cartesian position coordinates”:
+- An example of expressing all cartesian position coordinates in one node:
 ~~~json
 "position": {
 	"FULL_PATH": "/position",
@@ -85,7 +88,7 @@ Following are some accepted values for the EXTENDED_TYPE attribute, for multi-di
 	],
 }
 ~~~
-- Not all of these attributes are required to be used- for example, `position.cart.[xyz]` potentially includes `position.cart.x`, `position.cart.y`, and `position.cart.z`, but you don't need to use all of these at the same time.  The following examples are all correct:
+- As mentioned above, not all of these attributes are required to be used in the same OSC node - for example, `position.cart.[xyz]` potentially includes `position.cart.x`, `position.cart.y`, and `position.cart.z`, but you don't need to use all of these at the same time.  The following examples are all correct:
 ~~~json
 "2d_position": {
 	"FULL_PATH": "/2d_position",
