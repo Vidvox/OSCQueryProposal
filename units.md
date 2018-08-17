@@ -36,6 +36,7 @@ Following are some proposed examples of accepted values for the UNIT attribute:
 - `time.midinote` (usual MIDI note convention, in the range [0-127], with 36 being 440Hz)
 - `time.ms`
 - `time.speed`
+- `time.samples`
 
 ## Speed:
 - `speed.m/s`
