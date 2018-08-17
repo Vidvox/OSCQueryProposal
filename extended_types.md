@@ -8,8 +8,8 @@
 ## Multi-dimensional types
 
 Following are some accepted values for the EXTENDED_TYPE attribute, for multi-dimensional types, which all use the same notation:
-- Characters inside brackets enumerate the various possible values- for example, `position.polar.[rp]` means that you can use `position.polar.r`, and `position.cart.y`.
--  Those types can be used jointly (for all dimensions in the same node) or separately (one or several per node). A few examples are demonstrating this at the end of the document.
+- Characters inside brackets enumerate the various possible values- for example, `position.[rp]` means that you can use `position.r`, and `position.y`.
+-  Those types can be used jointly (for all dimensions in the same node) or separately (one or several per node), i.e. it's perfectly fine to have an OSC method that only accepts a single float for a given EXTENDED_TYPE, or any other combination of recognized EXTENDED_TYPE values in any order. A few examples are demonstrating this at the end of the document.
 
 
 ### Position
@@ -79,12 +79,14 @@ The dimensions names used here for polar coordinates are those suggested by ISO 
 - An example of expressing all cartesian position coordinates in one node:
 ~~~json
 "position": {
-	"FULL_PATH": "/position",
-	"TYPE": "fff",
+	"FULL_PATH": “/color/substractive”,
+	"TYPE": "fffff”,
 	"EXTENDED_TYPE": [
-		"position.cart.x",
-		"position.cart.y",
-		"position.cart.z",
+		“color.c”,
+		“color.m,
+		“color.y”,
+		“color.k”,
+		“color.a”
 	],
 }
 ~~~
@@ -95,7 +97,7 @@ The dimensions names used here for polar coordinates are those suggested by ISO 
 	"TYPE": "ff",
 	"EXTENDED_TYPE": [
 		"position.cart.x",
-		"position.cart.y",
+		"position.cart.y"
 	],
 }
 ~~~
@@ -103,7 +105,7 @@ The dimensions names used here for polar coordinates are those suggested by ISO 
 "x": {
 	"FULL_PATH": "/pos/x",
 	"TYPE": "i",
-	"EXTENDED_TYPE": [ "position.cart.x" ]
+	"EXTENDED_TYPE": "position.cart.x"
 },
 "funky_2D": {
 	"FULL_PATH": "/pos/funky_2D",
