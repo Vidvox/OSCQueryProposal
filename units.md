@@ -2,6 +2,11 @@
 
 Following are some proposed examples of accepted values for the UNIT attribute:
 
+It is acceptable to specify that a value doesn’t have an UNIT by using:
+- `none` 
+
+UNITs are sorted by categories of mutually-convertible sets of UNITs:
+
 ## Distance:
 - `distance.m`
 - `distance.km`
@@ -14,6 +19,8 @@ Following are some proposed examples of accepted values for the UNIT attribute:
 - `distance.inches`
 - `distance.feet`
 - `distance.miles`
+The previous UNITs are mutually convertible without any reference. 
+The next one requires a reference (a screen’s or projector’s resolution, for instance)
 - `distance.pixels`
 
 ## Angle:
@@ -36,6 +43,9 @@ Following are some proposed examples of accepted values for the UNIT attribute:
 - `time.midinote` (usual MIDI note convention, in the range [0-127], with 36 being 440Hz)
 - `time.ms`
 - `time.speed`
+The previous UNITs are mutually convertible without any reference. 
+The next one requires a reference (the audio stream’s sample rate):
+- `time.samples`
 
 ## Speed:
 - `speed.m/s`
